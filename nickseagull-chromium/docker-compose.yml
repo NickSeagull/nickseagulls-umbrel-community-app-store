@@ -10,10 +10,13 @@ services:
     image: jlesage/chromium:v26.09.2@sha256:e42de7469bce122b8a69d4f62101850ece45c41ed7ed952f2b506f99947093ae
     restart: on-failure
     shm_size: "1gb"
-    cap_add:
-      - SYS_ADMIN
     security_opt:
-      - seccomp:${APP_DATA_DIR}/seccomp.json
+      - seccomp:${APP_DATA_DIR}/hooks/seccomp.json
+      - apparmor=nickseagull-chromium-docker28_5_0-userns-260904
+    # Fail closed even if Umbrel swallows a pre-start hook error or reuses a container.
+    entrypoint:
+      - /bin/sh
+      - /usr/local/bin/verify-sandbox
     environment:
       USER_ID: "1000"
       GROUP_ID: "1000"
@@ -22,3 +25,5 @@ services:
       WEB_FILE_MANAGER: "0"
     volumes:
       - ${APP_DATA_DIR}/data:/config:rw
+      - ${APP_DATA_DIR}/hooks/verify-sandbox:/usr/local/bin/verify-sandbox:ro
+      - ${APP_DATA_DIR}/hooks/params-sandbox-required:/etc/services.d/app/params:ro
