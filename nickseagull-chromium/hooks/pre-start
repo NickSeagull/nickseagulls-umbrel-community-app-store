@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Umbrel invokes this host-side hook before starting the app's containers.
+# The named AppArmor profile is mandatory in Compose; no unconfined fallback.
+profile_file="$(readlink -f "$(dirname "${BASH_SOURCE[0]}")/chromium.apparmor")"
+test -f "$profile_file"
+/usr/sbin/apparmor_parser -K -r "$profile_file"

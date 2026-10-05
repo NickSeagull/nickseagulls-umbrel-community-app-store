@@ -1,0 +1,19 @@
+#!/bin/sh
+set -eu
+
+# Mounted read-only from the app package. Never start a browser under a
+# missing, complain-mode, or unexpected host AppArmor policy.
+label="$(cat /proc/self/attr/current)"
+if [ "$label" != 'nickseagull-chromium-docker28_5_0-userns-v1 (enforce)' ]; then
+  echo 'Required AppArmor profile is not enforcing' >&2
+  exit 1
+fi
+
+# Chromium also needs the package's Docker seccomp filter (mode 2).
+mode="$(awk '$1 == "Seccomp:" { print $2 }' /proc/self/status)"
+if [ "$mode" != 2 ]; then
+  echo 'Required Docker seccomp filter is absent' >&2
+  exit 1
+fi
+
+exec /init

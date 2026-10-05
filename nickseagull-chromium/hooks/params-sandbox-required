@@ -1,0 +1,28 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+# Adapted from jlesage/docker-chromium v26.09.2
+# rootfs/etc/services.d/app/params. Do not fall back to --no-sandbox:
+# Chromium must initialize its own sandbox or fail before real browsing.
+set -u
+
+printf "%s\n" "--disable-dev-shm-usage"
+printf "%s\n" "--ignore-gpu-blocklist"
+printf "%s\n" "--simulate-outdated-no-au='Tue, 31 Dec 2099 23:59:59 GMT'"
+printf "%s\n" "--start-maximized"
+printf "%s\n" "--user-data-dir=/config/chromium"
+
+if [ -n "${CHROMIUM_APP_URL:-}" ]; then
+    printf "%s\n" "--app=$CHROMIUM_APP_URL"
+fi
+
+# Remote debugging.
+if is-bool-val-true "${CHROMIUM_REMOTE_DEBUGGING:-0}"; then
+    printf "%s\n" "--remote-debugging-port=$((${CHROMIUM_REMOTE_DEBUGGING_PORT:-9222} + 1))"
+fi
+
+# Custom arguments.
+if [ -n "${CHROMIUM_CUSTOM_ARGS:-}" ]; then
+    eval 'for word in '$CHROMIUM_CUSTOM_ARGS'; do echo "$word"; done'
+fi
+
+# vim:ft=sh:ts=4:sw=4:et:sts=4
