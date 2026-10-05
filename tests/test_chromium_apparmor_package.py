@@ -77,7 +77,8 @@ class ChromiumAppArmorPackageTests(unittest.TestCase):
     def test_readme_cannot_invite_sensitive_sign_in_before_cdp_control(self):
         chromium_section = (ROOT / "README.md").read_text().split("## OmniRoute", 1)[0]
         self.assertIn("Do not sign in to GitHub, Gmail", chromium_section)
-        self.assertIn("CDP is currently unauthenticated", chromium_section)
+        self.assertIn("26.09.4 exposed unauthenticated CDP", chromium_section)
+        self.assertIn("No real-account sign-in until raw CDP is unreachable", chromium_section)
         self.assertNotIn("Only after those checks should Nick sign into web apps", chromium_section)
         self.assertNotIn("This packaging revision adds `SYS_ADMIN`", chromium_section)
 

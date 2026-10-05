@@ -4,30 +4,28 @@ name: Chromium for RAMSYS
 tagline: A persistent browser with visual login and CDP control
 icon: https://raw.githubusercontent.com/NickSeagull/nickseagulls-umbrel-community-app-store/master/nickseagull-chromium/icon.svg
 category: networking
-version: "26.09.4"
+version: "26.09.5"
 port: 4580
 description: >-
-  EXPERIMENTAL APP-START TEST — do not sign in to GitHub, Gmail, or other real
-  accounts yet. An unsigned-in direct Docker probe passed Chromium's sandbox
-  self-check and persisted a harmless cookie across restart without SYS_ADMIN;
-  the Umbrel app-managed startup and update path have not been verified. This
-  app loads a browser-specific AppArmor policy on the host before startup,
-  requires that policy and seccomp in the container, and uses a persistent
-  /config profile shared by visual browsing and CDP. Web terminal and file
-  manager are disabled.
+  EXPERIMENTAL PRIVATE-CDP TEST — do not sign in to real accounts yet. The
+  previous sandboxed app passed live visual/CDP and persistent-profile checks
+  on this Umbrel. This revision disables the stock network-wide debugging
+  proxy and tests browser-loopback CDP through a dedicated key-authenticated
+  SSH forwarding sidecar. Verify raw CDP denial, authenticated forwarding,
+  sandbox, and restart behavior before sensitive sign-in. The visual Umbrel
+  tile and persistent /config profile remain the same.
 developer: jlesage
 website: https://github.com/jlesage/docker-chromium
 submitter: NickSeagull
 repo: https://github.com/jlesage/docker-chromium
 support: https://github.com/jlesage/docker-chromium/issues
 releaseNotes: >-
-  Experimental app-managed sandbox test: load a Docker-default-derived,
-  Chromium-specific AppArmor profile before Compose and require it in enforce
-  mode. Add scoped seccomp exceptions for Chromium's user and PID namespaces,
-  remove CAP_SYS_ADMIN, and replace the pinned image's unsandboxed launcher
-  fallback with a fail-closed variant. An unsigned-in direct Docker trial passed
-  the sandbox self-check and profile restart test; Umbrel install/update has
-  not been verified. Do not sign in to real accounts yet.
+  Experimental CDP access-control update: disable the pinned image's raw
+  socat listener, request a loopback-only Chromium DevTools endpoint, and add
+  a pinned OpenSSH sidecar in the same browser network namespace. Restrict SSH
+  to a dedicated public key and one local-forward destination. Existing
+  AppArmor, seccomp and persistent /config remain. This access path has not
+  passed a live Umbrel update test; do not sign in to real accounts yet.
 dependencies: []
 path: ""
 defaultUsername: ""
