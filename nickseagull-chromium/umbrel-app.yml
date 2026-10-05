@@ -1,0 +1,26 @@
+manifestVersion: 1
+id: nickseagull-chromium
+name: Chromium for RAMSYS
+tagline: A persistent browser with visual login and CDP control
+icon: https://raw.githubusercontent.com/NickSeagull/nickseagulls-umbrel-community-app-store/master/nickseagull-chromium/icon.svg
+category: networking
+version: "26.09.2"
+port: 4580
+description: >-
+  A dedicated Chromium browser for interactive sign-in and agent-driven web workflows.
+  Open the browser in Umbrel to sign in yourself; an agent on the Umbrel Docker
+  network can connect to the same running browser over Chrome DevTools Protocol
+  on port 9222. Browser settings and signed-in profile data persist in this app's
+  private data volume. Web terminal and file manager are disabled.
+developer: jlesage
+website: https://github.com/jlesage/docker-chromium
+submitter: NickSeagull
+repo: https://github.com/jlesage/docker-chromium
+support: https://github.com/jlesage/docker-chromium/issues
+releaseNotes: >-
+  Initial release: pinned multi-architecture Chromium image, persistent profile,
+  Umbrel-hosted visual interface, and container-network CDP endpoint.
+dependencies: []
+path: ""
+defaultUsername: ""
+defaultPassword: ""
