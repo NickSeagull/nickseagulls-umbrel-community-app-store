@@ -1,0 +1,51 @@
+#!/usr/bin/with-contenv bash
+# Adapted from linuxserver/docker-openssh-server v10.3_p1-r1-ls238
+# root/etc/s6-overlay/s6-rc.d/svc-openssh-server/run (MIT).
+# Verify the *effective* post-initialization policy before accepting SSH.
+set -euo pipefail
+USER_NAME=${USER_NAME:-linuxserver.io}
+# The entrypoint removes persistent sshd config, but also reject any Match
+# clause in the image-generated config or our included policy. Otherwise a
+# loopback-only -T check could miss a policy applying to Docker-network peers.
+if grep -Eiq '^[[:space:]]*Match[[:space:]]' \
+    /config/sshd/sshd_config /config/sshd/sshd_config.d/10-cdp-only.conf; then
+    printf '%s\n' 'Unexpected SSH Match clause' >&2
+    exit 1
+fi
+for peer in 127.0.0.1 192.0.2.1 2001:db8::1; do
+    effective=$(/usr/sbin/sshd.pam -T -f /config/sshd/sshd_config \
+        -C "user=cdp,host=localhost,addr=${peer}") || exit 1
+for rule in \
+    'allowusers cdp' \
+    'authorizedkeysfile /key/ramsys.pub' \
+    'authenticationmethods publickey' \
+    'passwordauthentication no' \
+    'kbdinteractiveauthentication no' \
+    'permitrootlogin no' \
+    'allowtcpforwarding local' \
+    'permitopen 127.0.0.1:9222' \
+    'maxsessions 0' \
+    'permittty no' \
+    'x11forwarding no' \
+    'allowagentforwarding no'; do
+    if ! grep -Fqx -- "$rule" <<< "$effective"; then
+        printf 'CDP SSH policy check failed: %s\n' "$rule" >&2
+        exit 1
+    fi
+done
+done
+if [ ! -s /key/ramsys.pub ] || \
+   [ "$(wc -l < /key/ramsys.pub)" -ne 1 ] || \
+   ! ssh-keygen -lf /key/ramsys.pub >/dev/null 2>&1; then
+    printf '%s\n' 'CDP SSH public key is missing/invalid' >&2
+    exit 1
+fi
+SSH_HOST_KEYS=""
+for key in /config/ssh_host_keys/ssh_host_*_key; do
+    [ -s "$key" ] || { printf '%s\n' 'CDP SSH host key is missing' >&2; exit 1; }
+    SSH_HOST_KEYS="${SSH_HOST_KEYS} -h ${key}"
+done
+# Preserve upstream's s6 readiness notification and unprivileged sshd user.
+exec 2>&1 \
+    s6-notifyoncheck -d -n 300 -w 1000 -c "nc -z localhost ${LISTEN_PORT:-2222}" \
+        s6-setuidgid "${USER_NAME}" /usr/sbin/sshd.pam -D -e -f /config/sshd/sshd_config ${SSH_HOST_KEYS}

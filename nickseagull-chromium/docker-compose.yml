@@ -20,10 +20,35 @@ services:
     environment:
       USER_ID: "1000"
       GROUP_ID: "1000"
-      CHROMIUM_REMOTE_DEBUGGING: "1"
+      CHROMIUM_REMOTE_DEBUGGING: "0"
+      CHROMIUM_CUSTOM_ARGS: "--remote-debugging-port=9222 --remote-debugging-address=127.0.0.1"
       WEB_TERMINAL: "0"
       WEB_FILE_MANAGER: "0"
     volumes:
       - ${APP_DATA_DIR}/data:/config:rw
       - ${APP_DATA_DIR}/hooks/verify-sandbox:/usr/local/bin/verify-sandbox:ro
       - ${APP_DATA_DIR}/hooks/params-sandbox-required:/etc/services.d/app/params:ro
+
+  cdp_ssh:
+    image: linuxserver/openssh-server:version-10.3_p1-r1@sha256:46f115de7c251558297e7e87566fc3fc08544b63e55502b5cf294454db5d29d1
+    restart: on-failure
+    network_mode: "service:server"
+    depends_on:
+      server:
+        condition: service_started
+        restart: true
+    entrypoint:
+      - /bin/sh
+      - /usr/local/bin/cdp-entrypoint
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      USER_NAME: "cdp"
+      PASSWORD_ACCESS: "false"
+      SUDO_ACCESS: "false"
+    volumes:
+      - ${APP_DATA_DIR}/data/cdp-ssh:/config:rw
+      - ${APP_DATA_DIR}/hooks/cdp-client.pub:/key/ramsys.pub:ro
+      - ${APP_DATA_DIR}/hooks/cdp-sshd.conf:/key/cdp-sshd.conf:ro
+      - ${APP_DATA_DIR}/hooks/cdp-entrypoint:/usr/local/bin/cdp-entrypoint:ro
+      - ${APP_DATA_DIR}/hooks/cdp-sshd-run:/etc/s6-overlay/s6-rc.d/svc-openssh-server/run:ro
