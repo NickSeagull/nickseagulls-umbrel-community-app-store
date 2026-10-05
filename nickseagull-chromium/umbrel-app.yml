@@ -4,7 +4,7 @@ name: Chromium for RAMSYS
 tagline: A persistent browser with visual login and CDP control
 icon: https://raw.githubusercontent.com/NickSeagull/nickseagulls-umbrel-community-app-store/master/nickseagull-chromium/icon.svg
 category: networking
-version: "26.09.2"
+version: "26.09.3"
 port: 4580
 description: >-
   A dedicated Chromium browser for interactive sign-in and agent-driven web workflows.
@@ -18,8 +18,9 @@ submitter: NickSeagull
 repo: https://github.com/jlesage/docker-chromium
 support: https://github.com/jlesage/docker-chromium/issues
 releaseNotes: >-
-  Initial release: pinned multi-architecture Chromium image, persistent profile,
-  Umbrel-hosted visual interface, and container-network CDP endpoint.
+  App packaging revision for the pinned Chromium 26.09.2 image: add SYS_ADMIN
+  capability to allow its PID-namespace startup check and browser sandbox to run.
+  This broadens container privileges; verify chrome://sandbox after updating.
 dependencies: []
 path: ""
 defaultUsername: ""
