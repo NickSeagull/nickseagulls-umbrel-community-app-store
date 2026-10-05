@@ -1,0 +1,49 @@
+version: "3.7"
+services:
+  app_proxy:
+    environment:
+      APP_HOST: nickseagull-omniroute_server_1
+      APP_PORT: 20128
+      # Machine clients cannot send Umbrel browser cookies. OmniRoute still
+      # requires its own bearer API key on every /v1 request.
+      PROXY_AUTH_WHITELIST: "/v1/*"
+
+  server:
+    image: docker.io/diegosouzapw/omniroute:3.8.51@sha256:8bd462c9f60d8eda79329cfbb6ea7ea723505fe7721beb944f3d43835409e218
+    restart: on-failure
+    init: true
+    stop_grace_period: 40s
+    environment:
+      DATA_DIR: /app/data
+      REDIS_URL: "redis://:${APP_OMNIROUTE_REDIS_PASSWORD}@redis:6379"
+      REQUIRE_API_KEY: "true"
+      INITIAL_PASSWORD: "${APP_PASSWORD}"
+      PORT: "20128"
+      DASHBOARD_PORT: "20128"
+      # No upstream self-updater, browser-cookie providers, or CLI host mounts.
+      OMNIROUTE_MEMORY_MB: "2048"
+    volumes:
+      - ${APP_DATA_DIR}/data/omniroute:/app/data
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.mjs"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  redis:
+    image: docker.io/library/redis:8.6.5-alpine@sha256:cd218f4b106a332c5c992e38a9480bfb9d7e9f8f7b0ec9a0023bfa36d9a408f9
+    restart: on-failure
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning", "--requirepass", "${APP_OMNIROUTE_REDIS_PASSWORD}"]
+    environment:
+      REDISCLI_AUTH: "${APP_OMNIROUTE_REDIS_PASSWORD}"
+    volumes:
+      - ${APP_DATA_DIR}/data/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3

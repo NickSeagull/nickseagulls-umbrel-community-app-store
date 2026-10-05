@@ -1,0 +1,34 @@
+manifestVersion: 1
+id: nickseagull-omniroute
+storage:
+  dataRoot: data
+category: developer
+name: OmniRoute
+version: "3.8.51"
+tagline: Route AI model requests from a self-hosted gateway
+description: >-
+  OmniRoute provides a web dashboard and an OpenAI-compatible API gateway.
+  Open the app to configure provider connections and create a client API key.
+  The initial dashboard password is displayed by Umbrel; the API requires its
+  own OmniRoute key, including for requests to the /v1/* path that bypasses
+  Umbrel's browser-cookie gate. Redis and app state remain in this app's data.
+
+  This package does not configure client impersonation, fingerprint spoofing,
+  or subscription account rotation. Use only provider credentials and usage
+  patterns permitted by their terms. A ChatGPT subscription is not a general
+  OpenAI API entitlement.
+releaseNotes: ""
+developer: OmniRoute contributors
+website: https://github.com/diegosouzapw/OmniRoute
+dependencies: []
+repo: https://github.com/diegosouzapw/OmniRoute
+support: https://github.com/diegosouzapw/OmniRoute/issues
+port: 4581
+icon: https://raw.githubusercontent.com/NickSeagull/nickseagulls-umbrel-community-app-store/master/nickseagull-omniroute/icon.svg
+gallery: []
+path: ""
+defaultUsername: ""
+defaultPassword: ""
+deterministicPassword: true
+submitter: NickSeagull
+submission: https://github.com/NickSeagull/nickseagulls-umbrel-community-app-store/pull/3
