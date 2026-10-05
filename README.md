@@ -17,3 +17,11 @@ The app uses a vendored Docker v28.5.1 default seccomp profile with `unshare` ad
 5. Only after those checks should Nick sign into web apps himself. Configure the active RAMSYS browser endpoint separately; do not transfer corthan credentials or resume cron jobs.
 
 The manifest's icon points to this repository's `master` branch; it becomes available after the app change is merged. The app's package files live under `nickseagull-chromium/`.
+
+## OmniRoute
+
+`nickseagull-omniroute` packages the upstream OmniRoute 3.8.51 multi-architecture Docker image and a private Redis sidecar. Both images are pinned by tag and image-index digest. App data and Redis state are bind-mounted under the app's movable `data/` root. The dashboard opens behind Umbrel login; OmniRoute also requires its own dashboard password, initialized from the Umbrel-displayed app password. If that password is subsequently changed inside OmniRoute, Umbrel's displayed initial password will no longer be current.
+
+Clients use the Umbrel app origin at `/v1` with an **OmniRoute API key created in its dashboard**. Only `/v1/*` bypasses the Umbrel browser-cookie check; OmniRoute's own `REQUIRE_API_KEY=true` remains enforced. Do not share the password or API keys. The app does not expose Redis or mount the Docker socket, host CLI credentials, or browser profiles. Do not enable upstream fingerprint/header spoofing or use account rotation to bypass subscription limits. Use separately authorized provider credentials; TypeSafe Jev remains a direct, separate API integration rather than an OmniRoute chat-model route.
+
+The package has static validation and image-architecture checks but has **not** been installed through Umbrel or tested for browser login, authenticated client requests, restart persistence, or OAuth callbacks. The recommended first smoke test is a fresh Umbrel install, dashboard sign-in, creation of a test API key, a `/v1/models` call through the Umbrel proxy, restart, then a repeat login/request without losing config. Do not point production agents at the app until that passes.
