@@ -3,7 +3,7 @@
 # https://github.com/moby/moby/blob/v28.5.0/vendor/github.com/moby/profiles/apparmor/template.go
 # The only policy permission added is `userns create,` for Chromium's own sandbox.
 #include <tunables/global>
-profile nickseagull-chromium-docker28_5_0-userns-v1 flags=(attach_disconnected,mediate_deleted) {
+profile nickseagull-chromium-docker28_5_0-userns-260904 flags=(attach_disconnected,mediate_deleted) {
   #include <abstractions/base>
 
   network,
@@ -16,7 +16,7 @@ profile nickseagull-chromium-docker28_5_0-userns-v1 flags=(attach_disconnected,m
   signal (receive) peer=runc,
   signal (receive) peer=crun,
   # Dockerd on the tested Umbrel host is unconfined (covered above).
-  signal (send,receive) peer=nickseagull-chromium-docker28_5_0-userns-v1,
+  signal (send,receive) peer=nickseagull-chromium-docker28_5_0-userns-260904,
 
   deny @{PROC}/* w,
   deny @{PROC}/{[^1-9],[^1-9][^0-9],[^1-9s][^0-9y][^0-9s],[^1-9][^0-9][^0-9/]*}/** w,
@@ -36,5 +36,5 @@ profile nickseagull-chromium-docker28_5_0-userns-v1 flags=(attach_disconnected,m
   deny /sys/devices/virtual/powercap/** rwklx,
   deny /sys/kernel/security/** rwklx,
 
-  ptrace (trace,read,tracedby,readby) peer=nickseagull-chromium-docker28_5_0-userns-v1,
+  ptrace (trace,read,tracedby,readby) peer=nickseagull-chromium-docker28_5_0-userns-260904,
 }

@@ -6,7 +6,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "nickseagull-chromium"
-PROFILE_NAME = "nickseagull-chromium-docker28_5_0-userns-v1"
+PROFILE_NAME = "nickseagull-chromium-docker28_5_0-userns-260904"
 
 
 class ChromiumAppArmorPackageTests(unittest.TestCase):
@@ -48,7 +48,9 @@ class ChromiumAppArmorPackageTests(unittest.TestCase):
     def test_no_sys_admin_and_only_chromium_namespace_clone_seccomp_exceptions(self):
         server = self.compose["services"]["server"]
         self.assertNotIn("SYS_ADMIN", server.get("cap_add", []))
-        profile = json.loads((APP / "seccomp.json").read_text())
+        self.assertIn("seccomp:${APP_DATA_DIR}/hooks/seccomp.json", server["security_opt"])
+        self.assertFalse((APP / "seccomp.json").exists(), "Umbrel updates copy hooks/, not a root seccomp.json")
+        profile = json.loads((APP / "hooks" / "seccomp.json").read_text())
         for flag in (268435456, 536870912):  # CLONE_NEWUSER, CLONE_NEWPID
             self.assertTrue(any(
                 rule.get("names") == ["clone"]

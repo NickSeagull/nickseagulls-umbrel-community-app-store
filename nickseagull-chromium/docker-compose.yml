@@ -11,8 +11,8 @@ services:
     restart: on-failure
     shm_size: "1gb"
     security_opt:
-      - seccomp:${APP_DATA_DIR}/seccomp.json
-      - apparmor=nickseagull-chromium-docker28_5_0-userns-v1
+      - seccomp:${APP_DATA_DIR}/hooks/seccomp.json
+      - apparmor=nickseagull-chromium-docker28_5_0-userns-260904
     # Fail closed even if Umbrel swallows a pre-start hook error or reuses a container.
     entrypoint:
       - /bin/sh
