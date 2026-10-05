@@ -34,7 +34,9 @@ services:
     restart: on-failure
     network_mode: "service:server"
     depends_on:
-      - server
+      server:
+        condition: service_started
+        restart: true
     entrypoint:
       - /bin/sh
       - /usr/local/bin/cdp-entrypoint

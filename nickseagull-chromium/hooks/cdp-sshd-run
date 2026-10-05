@@ -4,8 +4,17 @@
 # Verify the *effective* post-initialization policy before accepting SSH.
 set -euo pipefail
 USER_NAME=${USER_NAME:-linuxserver.io}
-effective=$(/usr/sbin/sshd.pam -T -f /config/sshd/sshd_config \
-    -C user=cdp,host=localhost,addr=127.0.0.1) || exit 1
+# The entrypoint removes persistent sshd config, but also reject any Match
+# clause in the image-generated config or our included policy. Otherwise a
+# loopback-only -T check could miss a policy applying to Docker-network peers.
+if grep -Eiq '^[[:space:]]*Match[[:space:]]' \
+    /config/sshd/sshd_config /config/sshd/sshd_config.d/10-cdp-only.conf; then
+    printf '%s\n' 'Unexpected SSH Match clause' >&2
+    exit 1
+fi
+for peer in 127.0.0.1 192.0.2.1 2001:db8::1; do
+    effective=$(/usr/sbin/sshd.pam -T -f /config/sshd/sshd_config \
+        -C "user=cdp,host=localhost,addr=${peer}") || exit 1
 for rule in \
     'allowusers cdp' \
     'authorizedkeysfile /key/ramsys.pub' \
@@ -23,6 +32,7 @@ for rule in \
         printf 'CDP SSH policy check failed: %s\n' "$rule" >&2
         exit 1
     fi
+done
 done
 if [ ! -s /key/ramsys.pub ] || \
    [ "$(wc -l < /key/ramsys.pub)" -ne 1 ] || \

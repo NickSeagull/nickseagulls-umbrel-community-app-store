@@ -8,6 +8,11 @@ if [ ! -s /key/cdp-sshd.conf ] || [ ! -s /key/ramsys.pub ] || \
     printf '%s\n' 'CDP SSH policy or public key is missing/invalid' >&2
     exit 1
 fi
+# Regenerate the entire sshd configuration from the pinned image on every
+# start. Persistent Match/Include directives must never weaken a policy check
+# that was evaluated for a different Docker-network source address.
+# Host identity lives separately in /config/ssh_host_keys and is retained.
+rm -rf /config/sshd
 mkdir -p /config/sshd/sshd_config.d
 cp /key/cdp-sshd.conf /config/sshd/sshd_config.d/10-cdp-only.conf
 chmod 644 /config/sshd/sshd_config.d/10-cdp-only.conf

@@ -22,6 +22,7 @@ class PrivateCdpPackageTests(unittest.TestCase):
     def test_ssh_sidecar_only_shares_browser_network_namespace(self):
         ssh = self.compose["services"]["cdp_ssh"]
         self.assertEqual(ssh["network_mode"], "service:server")
+        self.assertEqual(ssh["depends_on"]["server"]["restart"], True)
         self.assertNotIn("ports", ssh)
         self.assertNotIn("privileged", ssh)
         self.assertNotIn("cap_add", ssh)
@@ -41,6 +42,7 @@ class PrivateCdpPackageTests(unittest.TestCase):
         entrypoint = (APP / "hooks" / "cdp-entrypoint").read_text()
         run = (APP / "hooks" / "cdp-sshd-run").read_text()
         self.assertIn("/key/cdp-sshd.conf", entrypoint)
+        self.assertIn("rm -rf /config/sshd", entrypoint)
         self.assertIn("/config/sshd/sshd_config.d/10-cdp-only.conf", entrypoint)
         self.assertIn("/key/ramsys.pub", entrypoint)
         self.assertIn("exec /init", entrypoint)
