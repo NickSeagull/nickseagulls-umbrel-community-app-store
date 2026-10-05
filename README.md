@@ -1,17 +1,19 @@
-## Umbrel Community App Store Template
+# NickSeagull Umbrel Community App Store
 
-This repository is a template to create an Umbrel Community App Store. These additional app stores allow developers to distribute applications without submitting to the [Official Umbrel App Store](https://github.com/getumbrel/umbrel-apps).
+App ID prefix: `nickseagull`.
 
-## How to use:
+## Chromium for RAMSYS
 
-1. Start by clicking the "Use this template" button located above.
-2. Assign an ID and name to your app store within the `umbrel-app-store.yml` file. This file specifies two important attributes:
-    - `id` - Acts as a unique prefix for every app within your Community App Store. You must start your application's ID with your app store's ID. For instance, in this template, the app store ID is `sparkles`, and there's an app named `hello world`. Consequently, the app's ID should be: `sparkles-hello-world`.
-    - `name` - This is the name of the Community App Store displayed in the umbrelOS UI.
-3. Change the name of the `sparkles-hello-world` folder to match your app's ID. The app ID is for you to decide. For example, if your app store ID is `whistles`, and your app is named My Video Downloader, you could set its app ID to `whistles-my-video-downloader`, and rename the folder accordingly.
-4. Next, enter your app's listing details in the `whistles-my-video-downloader/umbrel-app.yml`. These are displayed in the umbrelOS UI.
-5. Include the necessary Docker services in `whistles-my-video-downloader/docker-compose.yml`.
-6. That's it! Your Community App Store, featuring your unique app, is now set up and ready to go. To use your Community App Store, you can add its GitHub url the umbrelOS user interface as shown in the following demo:
+`nickseagull-chromium` packages the upstream `jlesage/chromium` image, pinned to release 26.09.2 and its multi-architecture image-index digest. It runs **one persistent visual Chromium browser**. Nick signs in through the Umbrel app tile; RAMSYS can attach to that same browser through CDP at `nickseagull-chromium_server_1:9222` on the Umbrel Docker network. The browser's state is stored in the app's `data` directory, mounted to `/config`. The web terminal and file manager remain off. Browserless is a separate disposable-session tool and is not part of this app.
 
+The app uses a vendored Docker v28.5.1 default seccomp profile with only `unshare` additionally allowed so Chromium can attempt its renderer sandbox without privileged mode or `SYS_ADMIN`. Source: `moby/moby` at `v28.5.1/vendor/github.com/moby/profiles/seccomp/default.json`; the vendored profile is under Moby's Apache-2.0 license (`nickseagull-chromium/SECCOMP-LICENSE`). **Runtime sandbox status has not been tested on Umbrel**; inspect `chrome://sandbox` before signing into accounts. The image's CDP implementation is documented upstream. An app manifest alone does not prove that the Umbrel app proxy or CDP connection works on Nick's host.
 
-https://user-images.githubusercontent.com/10330103/197889452-e5cd7e96-3233-4a09-b475-94b754adc7a3.mp4
+### Installation and acceptance
+
+1. Add this repository as a Community App Store in umbrelOS; install **Chromium for RAMSYS**. Do not uninstall the existing Browserless app as part of this test.
+2. Open its app tile and check that the graphical Chromium window loads. Inspect `chrome://version` for a profile path under `/config`; inspect `chrome://sandbox` for actual sandbox status.
+3. From Hermes, check the app's CDP `/json/version` and connect via WebSocket. The browser displayed in the app tile and the CDP target must be the same instance.
+4. Set a *synthetic expiring* cookie on a harmless test origin. Restart **only this browser app**, reconnect, read the cookie back, then delete it. A cookie visible only in the same session is insufficient evidence of persistence.
+5. Only after those checks should Nick sign into web apps himself. Configure the active RAMSYS browser endpoint separately; do not transfer corthan credentials or resume cron jobs.
+
+The manifest's icon points to this repository's `master` branch; it becomes available after the app change is merged. The app's package files live under `nickseagull-chromium/`.

@@ -1,0 +1,18 @@
+<mxfile host="app.diagrams.net" modified="2026-10-05T15:34:00Z" agent="RAMSYS" version="24.7.17" type="device">
+  <diagram id="umbrel-browser-flow" name="Umbrel browser boundaries">
+    <mxGraphModel dx="1200" dy="720" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="720" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/><mxCell id="1" parent="0"/>
+        <mxCell id="nick" value="Nick&#xa;manual sign-in" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="40" y="180" width="160" height="70" as="geometry"/></mxCell>
+        <mxCell id="proxy" value="Umbrel app proxy&#xa;visual browser UI :5800" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="260" y="180" width="190" height="70" as="geometry"/></mxCell>
+        <mxCell id="chromium" value="Chromium service&#xa;one running profile" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="520" y="180" width="200" height="70" as="geometry"/></mxCell>
+        <mxCell id="hermes" value="RAMSYS&#xa;browser tool" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1"><mxGeometry x="260" y="340" width="190" height="70" as="geometry"/></mxCell>
+        <mxCell id="volume" value="Umbrel app data&#xa;/config browser profile" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1"><mxGeometry x="540" y="340" width="170" height="90" as="geometry"/></mxCell>
+        <mxCell id="e1" value="UI / login" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="nick" target="proxy"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" value="web display" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="proxy" target="chromium"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" value="Docker-network CDP :9222" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="hermes" target="chromium"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4" value="persistent state" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="chromium" target="volume"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
