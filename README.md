@@ -2,19 +2,19 @@
 
 App ID prefix: `nickseagull`.
 
-## Chromium for RAMSYS — unsigned-in private-CDP experiment
+## Chromium for RAMSYS — sandboxed persistent browser
 
-`nickseagull-chromium` pins `jlesage/chromium` 26.09.2 by multi-architecture digest. Its Umbrel app tile opens a visual browser with a persistent `/config` profile. Version 26.09.4 passed a live sandbox self-check, CDP handshake, and synthetic-cookie persistence across an Umbrel restart, but **26.09.4 exposed unauthenticated CDP** to the shared Docker network. **Do not sign in to GitHub, Gmail, or other real accounts yet.** Umbrel's visual app proxy does not protect raw CDP.
+`nickseagull-chromium` pins `jlesage/chromium` 26.09.2 by multi-architecture digest. Its Umbrel tile provides a visual Chromium window backed by one persistent `/config/chromium/Default` profile, and its stock CDP listener is reachable at `nickseagull-chromium_server_1:9222` from Umbrel Docker peers. **Same-host container access is trusted** by Nick; CDP and VNC access from peers is intentional on this closed network. This app does not publish those ports on the host or Internet. The Umbrel app proxy protects the tile route, not direct peer connections.
 
-The existing browser-specific AppArmor policy, seccomp profile, no-`CAP_SYS_ADMIN` setup, and fail-closed launcher remain unchanged. Version 26.09.5 is an **untested access-control candidate**: disable the image's network-wide `socat` debugging proxy, request Chromium CDP on container loopback, and add a pinned OpenSSH sidecar sharing the browser's network namespace. Only a dedicated Hermes public key is allowed to forward to `127.0.0.1:9222`; shell sessions, passwords, sudo and other forwards are disabled. The private key stays under Hermes' persistent `/opt/data`, never in this repository; SSH host keys persist in the app's `data/cdp-ssh` directory. The package ships only a public key and SSH restrictions under update-copied `hooks/`. The sidecar copies the policy into its persistent config at startup and refuses SSH service if the effective policy or public key is missing, avoiding a read-only mount beneath LinuxServer's recursively owned `/config`.
+The browser keeps the versioned AppArmor policy, scoped seccomp exceptions for Chromium namespaces, no `CAP_SYS_ADMIN`, and a launcher that cannot silently fall back to `--no-sandbox`. These are defenses against malicious web content, not a guarantee that browser vulnerabilities are impossible. A live 26.09.4 install passed `chrome://sandbox` (PID/network namespaces and Seccomp-BPF), and a harmless cookie confirmed on disk survived an Umbrel restart. Version 26.09.5's additional SSH sidecar was unnecessary for Nick's threat model and failed after an app restart; 26.09.6 removes it without changing the browser profile or sandbox policy.
 
-### Experimental update and acceptance (unsigned-in)
+### Verify after updating
 
-1. Update **Chromium for RAMSYS** in Umbrel. Verify the graphical window and `chrome://sandbox` remain functional, with `/config/chromium/Default` as the profile and no `--no-sandbox` flag.
-2. Prove unauthenticated raw CDP on the browser container's shared-network IP port 9222 is **unreachable**. Prove wrong-key SSH and shell sessions fail; the pinned-key SSH tunnel must reach only loopback CDP and control the same visually displayed browser.
-3. Restart the app and Hermes independently. Check tunnel reconnection, adequate sandboxing and synthetic cookie persistence across app restart (wait until the expiring cookie is confirmed on disk before restarting), then delete the named probe cookie and verify its absence.
+1. Open the graphical Umbrel tile. Check `chrome://version` shows `/config/chromium/Default` without `--no-sandbox`; `chrome://sandbox` must report adequate sandboxing with PID/network namespaces and Seccomp-BPF.
+2. From Hermes, connect directly to the shared-network `:9222` endpoint and confirm it controls the same visible browser. The `browser.cdp_url` setting should point to that service, not a local SSH tunnel.
+3. Check the existing synthetic persistence-test cookie after the update, delete only that named cookie, and confirm its absence on disk. Keep Hermes cron jobs paused.
 
-**No real-account sign-in until raw CDP is unreachable and the authenticated tunnel, browser sandbox, and restart paths pass live checks.** Changes to the AppArmor policy require a new profile name; a stale same-named policy can otherwise mask a swallowed pre-start hook failure. The policy is Docker-default-like rather than narrow domain confinement, and an app-store hook runs with host authority. Keep Hermes cron jobs paused.
+Changes to the AppArmor policy require a new profile name; a stale same-named policy can otherwise mask a swallowed pre-start hook failure. The policy is Docker-default-like rather than narrow domain confinement, and an app-store hook runs with host authority.
 
 The manifest icon points to this repository's `master` branch; the package lives under `nickseagull-chromium/`.
 

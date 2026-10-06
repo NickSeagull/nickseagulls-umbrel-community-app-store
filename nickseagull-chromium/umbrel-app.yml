@@ -4,28 +4,27 @@ name: Chromium for RAMSYS
 tagline: A persistent browser with visual login and CDP control
 icon: https://raw.githubusercontent.com/NickSeagull/nickseagulls-umbrel-community-app-store/master/nickseagull-chromium/icon.svg
 category: networking
-version: "26.09.5"
+version: "26.09.6"
 port: 4580
 description: >-
-  EXPERIMENTAL PRIVATE-CDP TEST — do not sign in to real accounts yet. The
-  previous sandboxed app passed live visual/CDP and persistent-profile checks
-  on this Umbrel. This revision disables the stock network-wide debugging
-  proxy and tests browser-loopback CDP through a dedicated key-authenticated
-  SSH forwarding sidecar. Verify raw CDP denial, authenticated forwarding,
-  sandbox, and restart behavior before sensitive sign-in. The visual Umbrel
-  tile and persistent /config profile remain the same.
+  Persistent visual Chromium and CDP for RAMSYS on Nick's closed Umbrel
+  network. Same-host container access is trusted; browser CDP on port 9222 is
+  reachable to Docker peers but is not published on the host or Internet by
+  this app. The browser retains its update-managed AppArmor and seccomp
+  sandbox policy, no CAP_SYS_ADMIN, fail-closed launcher, and persistent
+  /config profile. Verify chrome://sandbox after updating.
 developer: jlesage
 website: https://github.com/jlesage/docker-chromium
 submitter: NickSeagull
 repo: https://github.com/jlesage/docker-chromium
 support: https://github.com/jlesage/docker-chromium/issues
 releaseNotes: >-
-  Experimental CDP access-control update: disable the pinned image's raw
-  socat listener, request a loopback-only Chromium DevTools endpoint, and add
-  a pinned OpenSSH sidecar in the same browser network namespace. Restrict SSH
-  to a dedicated public key and one local-forward destination. Existing
-  AppArmor, seccomp and persistent /config remain. This access path has not
-  passed a live Umbrel update test; do not sign in to real accounts yet.
+  Remove the unnecessary SSH sidecar and restore the pinned image's CDP
+  listener on the shared Umbrel Docker network, matching Nick's trusted-host
+  threat model. Keep the same persistent browser profile, browser-specific
+  AppArmor policy, seccomp exceptions, and fail-closed sandbox launcher.
+  No browser CDP host port is published. Recheck chrome://sandbox and profile
+  persistence after the update.
 dependencies: []
 path: ""
 defaultUsername: ""
