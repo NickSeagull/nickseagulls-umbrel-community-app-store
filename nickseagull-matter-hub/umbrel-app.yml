@@ -29,4 +29,4 @@ defaultPassword: ""
 deterministicPassword: true
 releaseNotes: "Initial package of maintained Matter Hub v2.0.58."
 submitter: NickSeagull
-submission: https://github.com/NickSeagull/nickseagulls-umbrel-community-app-store/pulls
+submission: https://github.com/NickSeagull/nickseagulls-umbrel-community-app-store/pull/7
