@@ -68,18 +68,16 @@ class ChromiumAppArmorPackageTests(unittest.TestCase):
         self.assertIn('"--user-data-dir=/config/chromium"', params)
         self.assertIn('CHROMIUM_REMOTE_DEBUGGING', params)
 
-    def test_manifest_warnings_and_persistent_profile(self):
+    def test_manifest_describes_sandbox_and_persistent_profile(self):
         self.assertIn("${APP_DATA_DIR}/data:/config:rw", self.compose["services"]["server"]["volumes"])
-        self.assertIn("do not sign in", self.manifest["description"].lower())
+        self.assertIn("sandbox", self.manifest["description"].lower())
         self.assertNotIn("--no-sandbox", (APP / "docker-compose.yml").read_text())
 
 
-    def test_readme_cannot_invite_sensitive_sign_in_before_cdp_control(self):
+    def test_readme_matches_trusted_host_threat_model(self):
         chromium_section = (ROOT / "README.md").read_text().split("## OmniRoute", 1)[0]
-        self.assertIn("Do not sign in to GitHub, Gmail", chromium_section)
-        self.assertIn("26.09.4 exposed unauthenticated CDP", chromium_section)
-        self.assertIn("No real-account sign-in until raw CDP is unreachable", chromium_section)
-        self.assertNotIn("Only after those checks should Nick sign into web apps", chromium_section)
+        self.assertIn("Same-host container access is trusted", chromium_section)
+        self.assertNotIn("No real-account sign-in until raw CDP is unreachable", chromium_section)
         self.assertNotIn("This packaging revision adds `SYS_ADMIN`", chromium_section)
 
 if __name__ == "__main__":
