@@ -11,9 +11,10 @@ description: >-
   Apple Home and other Matter controllers over the local network. It is not
   the Matter Server controller for importing devices into Home Assistant.
   Requires a Google Matter hub, working LAN IPv6/mDNS and an HA long-lived
-  access token. Provision data/ha.env with HAMH_HOME_ASSISTANT_ACCESS_TOKEN
-  before installing (see this store's README). Its host-networked web UI
-  uses HTTP Basic authentication with Umbrel's generated app password.
+  access token. Provision ha.env with HAMH_HOME_ASSISTANT_ACCESS_TOKEN
+  before installing in the app's fixed directory (see this store's README).
+  Its host-networked web UI uses HTTP Basic authentication with Umbrel's
+  generated app password.
 developer: RiDDiX and Home Assistant Matter Hub contributors
 website: https://riddix.github.io/home-assistant-matter-hub/
 repo: https://github.com/RiDDiX/home-assistant-matter-hub
