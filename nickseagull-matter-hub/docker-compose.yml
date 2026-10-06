@@ -1,0 +1,19 @@
+version: "3.7"
+
+services:
+  server:
+    image: ghcr.io/riddix/home-assistant-matter-hub:2.0.58@sha256:3b1aa47b49d6f99dac336633f5a3f3ceed7a340b4e9cd4bdd90fbebd0e32db4e
+    restart: on-failure
+    # Matter commissioning and mDNS require the real LAN network stack/IPv6.
+    network_mode: host
+    # Provision this file before installation; never commit an HA access token.
+    env_file:
+      - ${APP_DATA_DIR}/data/ha.env
+    environment:
+      HAMH_HOME_ASSISTANT_URL: http://127.0.0.1:8123
+      HAMH_HTTP_PORT: "8482"
+      # Host networking bypasses the Umbrel app proxy. Protect the web UI itself.
+      HAMH_HTTP_AUTH_USERNAME: admin
+      HAMH_HTTP_AUTH_PASSWORD: ${APP_PASSWORD}
+    volumes:
+      - ${APP_DATA_DIR}/data/state:/data
