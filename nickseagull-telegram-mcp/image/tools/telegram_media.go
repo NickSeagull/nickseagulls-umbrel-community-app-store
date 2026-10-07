@@ -17,6 +17,72 @@ import (
 	"github.com/nguyenvanduocit/telegram-mcp/services"
 )
 
+// Media is kept separate from Telegram credentials. Only flat filenames are
+// accepted; os.Root prevents a symlink from escaping this directory.
+func mediaDir() string {
+	if dir := os.Getenv("TELEGRAM_MCP_MEDIA_DIR"); dir != "" {
+		return dir
+	}
+	return "/media"
+}
+
+func mediaFilename(name string) error {
+	if name == "" || name == "." || name == ".." || filepath.Base(name) != name || strings.ContainsAny(name, `/\\`) {
+		return fmt.Errorf("media filename must be a single component")
+	}
+	return nil
+}
+
+func openMediaUpload(path string) (*os.File, error) {
+	dir := mediaDir()
+	if !filepath.IsAbs(path) || filepath.Clean(path) != path || filepath.Dir(path) != dir {
+		return nil, fmt.Errorf("file_path must be a direct file under %s", dir)
+	}
+	name := filepath.Base(path)
+	if err := mediaFilename(name); err != nil {
+		return nil, err
+	}
+	root, err := os.OpenRoot(dir)
+	if err != nil {
+		return nil, err
+	}
+	defer root.Close()
+	info, err := root.Lstat(name)
+	if err != nil {
+		return nil, err
+	}
+	if !info.Mode().IsRegular() {
+		return nil, fmt.Errorf("media source must be a regular file")
+	}
+	f, err := root.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	info, err = f.Stat()
+	if err != nil || !info.Mode().IsRegular() {
+		f.Close()
+		return nil, fmt.Errorf("media source must be a regular file")
+	}
+	return f, nil
+}
+
+func createMediaDownload(name string) (*os.File, string, error) {
+	if err := mediaFilename(name); err != nil {
+		return nil, "", err
+	}
+	dir := mediaDir()
+	root, err := os.OpenRoot(dir)
+	if err != nil {
+		return nil, "", err
+	}
+	defer root.Close()
+	f, err := root.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+	if err != nil {
+		return nil, "", err
+	}
+	return f, filepath.Join(dir, name), nil
+}
+
 // Input structs
 
 type downloadMediaInput struct {
@@ -49,11 +115,11 @@ func RegisterMediaTools(s *server.MCPServer) {
 	s.AddTool(
 		mcp.NewTool("telegram_download_media",
 			mcp.WithDescription("Download media from a Telegram message"),
-			mcp.WithReadOnlyHintAnnotation(true),
+			mcp.WithReadOnlyHintAnnotation(false),
 			mcp.WithDestructiveHintAnnotation(false),
 			mcp.WithString("peer", mcp.Required(), mcp.Description("Chat ID or @username")),
 			mcp.WithNumber("message_id", mcp.Required(), mcp.Description("ID of the message containing media")),
-			mcp.WithString("download_dir", mcp.Description("Directory to save the file (default ./downloads)")),
+			mcp.WithString("download_dir", mcp.Description("Deprecated; downloads are restricted to the app media directory")),
 		),
 		mcp.NewTypedToolHandler(handleDownloadMedia),
 	)
@@ -64,7 +130,7 @@ func RegisterMediaTools(s *server.MCPServer) {
 			mcp.WithReadOnlyHintAnnotation(false),
 			mcp.WithDestructiveHintAnnotation(false),
 			mcp.WithString("peer", mcp.Required(), mcp.Description("Chat ID or @username")),
-			mcp.WithString("file_path", mcp.Required(), mcp.Description("Path to the file to send")),
+			mcp.WithString("file_path", mcp.Required(), mcp.Description("Absolute path to a direct file in /media")),
 			mcp.WithString("caption", mcp.Description("Caption for the media (optional)")),
 		),
 		mcp.NewTypedToolHandler(handleSendMedia),
@@ -163,6 +229,9 @@ func mimeFromPath(path string) string {
 }
 
 func handleDownloadMedia(_ context.Context, _ mcp.CallToolRequest, input downloadMediaInput) (*mcp.CallToolResult, error) {
+	if input.DownloadDir != "" && input.DownloadDir != mediaDir() {
+		return mcp.NewToolResultError("download_dir must be the app media directory"), nil
+	}
 	tgCtx := services.Context()
 
 	peer, err := services.ResolvePeer(tgCtx, input.Peer)
@@ -177,20 +246,6 @@ func handleDownloadMedia(_ context.Context, _ mcp.CallToolRequest, input downloa
 
 	if msg.Media == nil {
 		return mcp.NewToolResultError("message has no media"), nil
-	}
-
-	downloadDir := input.DownloadDir
-	if downloadDir == "" {
-		downloadDir = "./downloads"
-	}
-	downloadDir = filepath.Clean(downloadDir)
-	absDir, err := filepath.Abs(downloadDir)
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("invalid download_dir: %v", err)), nil
-	}
-	downloadDir = absDir
-	if err := os.MkdirAll(downloadDir, 0700); err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("failed to create download dir: %v", err)), nil
 	}
 
 	d := downloader.NewDownloader()
@@ -221,10 +276,17 @@ func handleDownloadMedia(_ context.Context, _ mcp.CallToolRequest, input downloa
 			ThumbSize:     bestType,
 		}
 
-		filePath := filepath.Join(downloadDir, fmt.Sprintf("photo_%d_%d.jpg", msg.ID, photo.ID))
-		_, err = d.Download(services.API(), loc).ToPath(tgCtx, filePath)
+		file, filePath, err := createMediaDownload(fmt.Sprintf("photo_%d_%d.jpg", msg.ID, photo.ID))
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("failed to create media: %v", err)), nil
+		}
+		_, err = d.Download(services.API(), loc).Stream(tgCtx, file)
+		closeErr := file.Close()
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("failed to download photo: %v", err)), nil
+		}
+		if closeErr != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("failed to close photo: %v", closeErr)), nil
 		}
 
 		return mcp.NewToolResultText(fmt.Sprintf("Photo downloaded to: %s", filePath)), nil
@@ -239,7 +301,7 @@ func handleDownloadMedia(_ context.Context, _ mcp.CallToolRequest, input downloa
 		filename := fmt.Sprintf("doc_%d_%d", msg.ID, doc.ID)
 		for _, attr := range doc.Attributes {
 			if fn, ok := attr.(*tg.DocumentAttributeFilename); ok {
-				filename = filepath.Base(fn.FileName)
+				filename += "_" + filepath.Base(fn.FileName)
 				break
 			}
 		}
@@ -250,10 +312,17 @@ func handleDownloadMedia(_ context.Context, _ mcp.CallToolRequest, input downloa
 			FileReference: doc.FileReference,
 		}
 
-		filePath := filepath.Join(downloadDir, filename)
-		_, err = d.Download(services.API(), loc).ToPath(tgCtx, filePath)
+		file, filePath, err := createMediaDownload(filename)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("failed to create media: %v", err)), nil
+		}
+		_, err = d.Download(services.API(), loc).Stream(tgCtx, file)
+		closeErr := file.Close()
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("failed to download document: %v", err)), nil
+		}
+		if closeErr != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("failed to close document: %v", closeErr)), nil
 		}
 
 		return mcp.NewToolResultText(fmt.Sprintf("Document downloaded to: %s", filePath)), nil
@@ -264,6 +333,11 @@ func handleDownloadMedia(_ context.Context, _ mcp.CallToolRequest, input downloa
 }
 
 func handleSendMedia(_ context.Context, _ mcp.CallToolRequest, input sendMediaInput) (*mcp.CallToolResult, error) {
+	f, err := openMediaUpload(input.FilePath)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("invalid file_path: %v", err)), nil
+	}
+	defer f.Close()
 	tgCtx := services.Context()
 
 	peer, err := services.ResolvePeer(tgCtx, input.Peer)
@@ -271,21 +345,13 @@ func handleSendMedia(_ context.Context, _ mcp.CallToolRequest, input sendMediaIn
 		return mcp.NewToolResultError(fmt.Sprintf("failed to resolve peer: %v", err)), nil
 	}
 
-	cleanPath := filepath.Clean(input.FilePath)
-	if !filepath.IsAbs(cleanPath) {
-		return mcp.NewToolResultError("file_path must be an absolute path"), nil
-	}
-	if _, err := os.Stat(cleanPath); err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("file not found: %v", err)), nil
-	}
-
 	u := uploader.NewUploader(services.API())
-	uploaded, err := u.FromPath(tgCtx, cleanPath)
+	uploaded, err := u.FromFile(tgCtx, f)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("failed to upload file: %v", err)), nil
 	}
 
-	mimeType := mimeFromPath(cleanPath)
+	mimeType := mimeFromPath(input.FilePath)
 
 	_, err = services.API().MessagesSendMedia(tgCtx, &tg.MessagesSendMediaRequest{
 		Peer: peer,
@@ -293,7 +359,7 @@ func handleSendMedia(_ context.Context, _ mcp.CallToolRequest, input sendMediaIn
 			File:     uploaded,
 			MimeType: mimeType,
 			Attributes: []tg.DocumentAttributeClass{
-				&tg.DocumentAttributeFilename{FileName: filepath.Base(cleanPath)},
+				&tg.DocumentAttributeFilename{FileName: filepath.Base(input.FilePath)},
 			},
 		},
 		Message:  input.Caption,
@@ -303,7 +369,7 @@ func handleSendMedia(_ context.Context, _ mcp.CallToolRequest, input sendMediaIn
 		return mcp.NewToolResultError(fmt.Sprintf("failed to send media: %v", err)), nil
 	}
 
-	return mcp.NewToolResultText(fmt.Sprintf("Media sent successfully: %s", filepath.Base(cleanPath))), nil
+	return mcp.NewToolResultText(fmt.Sprintf("Media sent successfully: %s", filepath.Base(input.FilePath))), nil
 }
 
 func handleGetFileInfo(_ context.Context, _ mcp.CallToolRequest, input getFileInfoInput) (*mcp.CallToolResult, error) {

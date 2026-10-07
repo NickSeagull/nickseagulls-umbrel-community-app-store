@@ -16,6 +16,8 @@ services:
       TELEGRAM_MCP_OWNER_PASSWORD: ${APP_PASSWORD}
       TELEGRAM_MCP_TOKEN: ${APP_TELEGRAM_MCP_TOKEN}
       TELEGRAM_MCP_DATA_DIR: /data
+      TELEGRAM_MCP_MEDIA_DIR: /media
       TELEGRAM_MCP_LISTEN: :8080
     volumes:
       - ${APP_DATA_DIR}/data/state:/data
+      - ${APP_DATA_DIR}/data/media:/media
