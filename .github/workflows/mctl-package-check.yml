@@ -24,6 +24,7 @@ jobs:
           TELEGRAM_OIDC_CLIENT_SECRET=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
           PUBLIC_BASE_URL=https://example.invalid
           TG_LOGIN_CLIENTS=12345678
+          OAUTH_DCR_REDIRECT_URIS=http://127.0.0.1:48500/callback
           ENV
           chmod 600 "$tmp/mctl.env"
           export APP_DATA_DIR="$tmp"
@@ -71,9 +72,48 @@ jobs:
           assert x['resource'] == 'https://example.invalid/mcp'
           print('Health, unauthorized MCP, and OAuth protected-resource discovery pass')
           PY
+          curl -fsS -H 'Content-Type: application/json' \
+            --data '{"client_name":"synthetic-ci","redirect_uris":["http://127.0.0.1:48500/callback"]}' \
+            http://127.0.0.1:18083/oauth/register > "$tmp/client.json"
+          python3 - "$tmp/client.json" "$tmp/client-id" <<'PY'
+          import json,sys
+          x=json.load(open(sys.argv[1]))
+          assert x['client_id'].startswith('tgmcp_')
+          open(sys.argv[2],'w').write(x['client_id'])
+          print('Synthetic OAuth client registered')
+          PY
           "${compose[@]}" restart server
           for i in $(seq 1 20); do
             if curl -fsS http://127.0.0.1:18083/healthz >/dev/null; then break; fi
             sleep 2
           done
           curl -fsS http://127.0.0.1:18083/healthz >/dev/null
+          python3 - "$tmp/client-id" <<'PY'
+          import sys,urllib.request,urllib.error,urllib.parse
+          client_id=open(sys.argv[1]).read()
+          params={'client_id':client_id,'redirect_uri':'http://127.0.0.1:48500/callback','response_type':'code','code_challenge':'a'*43,'code_challenge_method':'S256','state':'synthetic-ci'}
+          url='http://127.0.0.1:18083/oauth/authorize?'+urllib.parse.urlencode(params)
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self,*args,**kwargs): return None
+          opener=urllib.request.build_opener(NoRedirect)
+          try: opener.open(url,timeout=8)
+          except urllib.error.HTTPError as e:
+              assert e.code == 302 and e.headers.get('Location','').startswith('https://oauth.telegram.org/'), f'authorization after restart: HTTP {e.code}'
+          else: raise AssertionError('expected Telegram OIDC redirect')
+          print('Dynamic OAuth registration survives server restart')
+          PY
+          python3 - "$tmp/mctl.env" <<'PY'
+          import sys
+          p=sys.argv[1]
+          text=open(p).read()
+          assert 'TG_LOGIN_CLIENTS=12345678' in text
+          open(p,'w').write(text.replace('TG_LOGIN_CLIENTS=12345678','TG_LOGIN_CLIENTS='))
+          PY
+          "${compose[@]}" up -d --force-recreate server
+          sleep 3
+          "${compose[@]}" logs --no-color server > "$tmp/guard.log"
+          python3 - "$tmp/guard.log" <<'PY'
+          import sys
+          assert 'TG_LOGIN_CLIENTS must list the owner Telegram ID' in open(sys.argv[1]).read()
+          print('Empty owner allowlist refuses startup')
+          PY
