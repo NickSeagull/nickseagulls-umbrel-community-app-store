@@ -1,0 +1,36 @@
+manifestVersion: 2.0
+id: nickseagull-telegram-mcp
+storage:
+  dataRoot: data
+category: developer
+name: Telegram MCP
+version: b57f47d-umbrel2
+tagline: Connect an AI assistant to your Telegram account
+requiresHttps: true
+description: >-
+  A Go MCP server for Nick's Telegram user account. It can read and search chats,
+  but also exposes sends, edits, deletes and admin actions: the MCP bearer token
+  grants account-level power. Connect only a trusted assistant and approve each
+  external write deliberately.
+
+  Open the app through Umbrel to enter your Telegram API ID, API hash and phone,
+  then complete Telegram verification and optional 2FA privately in the browser.
+  The owner login is separate from the MCP bearer token. The app stores Telegram
+  credentials, session and peer cache under its movable Umbrel data folder.
+releaseNotes: >-
+  Initial community-store package based on upstream b57f47d with owner setup UI,
+  private authentication forms and a bearer-protected MCP endpoint.
+developer: nguyenvanduocit and NickSeagull
+website: https://github.com/nguyenvanduocit/telegram-mcp
+repo: https://github.com/NickSeagull/nickseagulls-umbrel-community-app-store
+support: https://github.com/NickSeagull/nickseagulls-umbrel-community-app-store/issues
+dependencies: []
+port: 4582
+icon: https://raw.githubusercontent.com/NickSeagull/nickseagulls-umbrel-community-app-store/master/nickseagull-telegram-mcp/icon.svg
+gallery: []
+path: ""
+defaultUsername: owner
+defaultPassword: ""
+deterministicPassword: true
+submitter: NickSeagull
+submission: ""
