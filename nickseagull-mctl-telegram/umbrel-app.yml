@@ -31,5 +31,25 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 deterministicPassword: false
+environment:
+  - name: TG_API_ID
+    services: [server]
+    note: Telegram application ID from my.telegram.org/apps (numeric).
+  - name: TG_API_HASH
+    services: [server]
+    note: Telegram application hash from my.telegram.org/apps. Umbrel settings inputs are not secret-masked.
+  - name: TELEGRAM_OIDC_CLIENT_ID
+    services: [server]
+    note: BotFather Login Widget OIDC client ID.
+  - name: TELEGRAM_OIDC_CLIENT_SECRET
+    services: [server]
+    note: BotFather Login Widget OIDC client secret. Umbrel settings inputs are not secret-masked.
+  - name: TG_LOGIN_CLIENTS
+    services: [server]
+    note: Numeric Telegram user ID allowed to connect; required before server startup.
+  - name: PUBLIC_BASE_URL
+    services: [server]
+    default: https://telegram-mcp.p.egregore.io
+    note: Tailnet-only HTTPS origin for OAuth and MCP; do not change without re-registering the BotFather callback.
 submitter: NickSeagull
 submission: ""

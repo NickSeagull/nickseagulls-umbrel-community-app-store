@@ -46,13 +46,21 @@ jobs:
           trap 'status=$?; if (( status )); then "${compose[@]}" ps -a || true; "${compose[@]}" logs --no-color --tail 60 server db || true; fi; "${compose[@]}" down --remove-orphans >/dev/null 2>&1 || true; sudo rm -rf "$tmp"; exit "$status"' EXIT
           "${base[@]}" config --format json > "$tmp/unconfigured.json"
           python3 - "$tmp/unconfigured.json" <<'PY'
-          import json, sys
+          import json, re, sys
+          from pathlib import Path
           app = json.load(open(sys.argv[1]))['services']['server']
           assert 'env_file' not in app
-          for name in ('TG_API_ID', 'TG_API_HASH', 'TELEGRAM_OIDC_CLIENT_ID',
-                       'TELEGRAM_OIDC_CLIENT_SECRET', 'TG_LOGIN_CLIENTS'):
+          required = {'TG_API_ID', 'TG_API_HASH', 'TELEGRAM_OIDC_CLIENT_ID',
+                      'TELEGRAM_OIDC_CLIENT_SECRET', 'TG_LOGIN_CLIENTS'}
+          for name in required:
               assert app['environment'][name] == '', name
-          print('Unconfigured install requires no env file and has blank credentials')
+          manifest = Path('umbrel-app.yml').read_text()
+          exposed = set(re.findall(r'(?m)^  - name: ([A-Z_]+)\n    services: \[server\]$', manifest))
+          assert required <= exposed, required - exposed
+          for name in required:
+              block = re.search(r'(?ms)^  - name: ' + name + r'\n(.*?)(?=^  - name:|^submitter:)', manifest)
+              assert block and not re.search(r'(?m)^    default:', block.group(1)), name
+          print('Unconfigured install needs no env file; five secrets are blank and listed in Umbrel settings')
           PY
           "${base[@]}" up -d db server
           sleep 3
