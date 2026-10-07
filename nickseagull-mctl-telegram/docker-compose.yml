@@ -11,9 +11,15 @@ services:
     restart: on-failure
     init: true
     user: "1000:1000"
-    env_file:
-      - ${APP_DATA_DIR}/mctl.env
     environment:
+      # Fill these five values in Umbrel app Settings -> Environment
+      # variables after installation; empty values fail closed at first boot.
+      TG_API_ID: ""
+      TG_API_HASH: ""
+      TELEGRAM_OIDC_CLIENT_ID: ""
+      TELEGRAM_OIDC_CLIENT_SECRET: ""
+      TG_LOGIN_CLIENTS: ""
+      PUBLIC_BASE_URL: "https://telegram-mcp.p.egregore.io"
       ADDR: ":8080"
       AUTH_MODE: local-jwt
       AUTH_REQUIRED: "true"
@@ -25,7 +31,7 @@ services:
       MCP_APPS_ENABLED: "false"
     entrypoint: ["/bin/sh", "-ec"]
     command:
-      - 'test -n "$$TG_LOGIN_CLIENTS" || { printf "%s\n" "TG_LOGIN_CLIENTS must list the owner Telegram ID" >&2; exit 1; }; exec /usr/local/bin/mctl-telegram'
+      - 'test -n "$$TG_LOGIN_CLIENTS" || { printf "%s\n" "TG_LOGIN_CLIENTS must list the owner Telegram ID" >&2; exit 1; }; test -n "$$TG_API_ID" && test -n "$$TG_API_HASH" && test -n "$$TELEGRAM_OIDC_CLIENT_ID" && test -n "$$TELEGRAM_OIDC_CLIENT_SECRET" || { printf "%s\n" "Telegram API and OIDC settings must be configured" >&2; exit 1; }; exec /usr/local/bin/mctl-telegram'
     depends_on:
       db:
         condition: service_healthy

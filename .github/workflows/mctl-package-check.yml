@@ -17,16 +17,6 @@ jobs:
           set -euo pipefail
           tmp="$(mktemp -d)"
           cd nickseagull-mctl-telegram
-          cat > "$tmp/mctl.env" <<'ENV'
-          TG_API_ID=12345678
-          TG_API_HASH=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-          TELEGRAM_OIDC_CLIENT_ID=12345678
-          TELEGRAM_OIDC_CLIENT_SECRET=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-          PUBLIC_BASE_URL=https://example.invalid
-          TG_LOGIN_CLIENTS=12345678
-          OAUTH_DCR_REDIRECT_URIS=http://127.0.0.1:48500/callback
-          ENV
-          chmod 600 "$tmp/mctl.env"
           export APP_DATA_DIR="$tmp"
           export APP_NICKSEAGULL_MCTL_TELEGRAM_JWT_KEY="$(openssl rand -hex 32)"
           export APP_NICKSEAGULL_MCTL_TELEGRAM_ENCRYPTION_KEY="$(openssl rand -hex 32)"
@@ -39,8 +29,43 @@ jobs:
               ports:
                 - "127.0.0.1:18083:8080"
           YAML
-          compose=(docker compose -f docker-compose.yml -f "$tmp/check.yml" -p mctl-umbrel-check)
+          cat > "$tmp/settings.yml" <<'YAML'
+          services:
+            server:
+              environment:
+                TG_API_ID: "12345678"
+                TG_API_HASH: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                TELEGRAM_OIDC_CLIENT_ID: "12345678"
+                TELEGRAM_OIDC_CLIENT_SECRET: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                TG_LOGIN_CLIENTS: "12345678"
+                PUBLIC_BASE_URL: "https://example.invalid"
+                OAUTH_DCR_REDIRECT_URIS: "http://127.0.0.1:48500/callback"
+          YAML
+          base=(docker compose -f docker-compose.yml -f "$tmp/check.yml" -p mctl-umbrel-check)
+          compose=(docker compose -f docker-compose.yml -f "$tmp/check.yml" -f "$tmp/settings.yml" -p mctl-umbrel-check)
           trap 'status=$?; if (( status )); then "${compose[@]}" ps -a || true; "${compose[@]}" logs --no-color --tail 60 server db || true; fi; "${compose[@]}" down --remove-orphans >/dev/null 2>&1 || true; sudo rm -rf "$tmp"; exit "$status"' EXIT
+          "${base[@]}" config --format json > "$tmp/unconfigured.json"
+          python3 - "$tmp/unconfigured.json" <<'PY'
+          import json, sys
+          app = json.load(open(sys.argv[1]))['services']['server']
+          assert 'env_file' not in app
+          for name in ('TG_API_ID', 'TG_API_HASH', 'TELEGRAM_OIDC_CLIENT_ID',
+                       'TELEGRAM_OIDC_CLIENT_SECRET', 'TG_LOGIN_CLIENTS'):
+              assert app['environment'][name] == '', name
+          print('Unconfigured install requires no env file and has blank credentials')
+          PY
+          "${base[@]}" up -d db server
+          sleep 3
+          "${base[@]}" logs --no-color server > "$tmp/unconfigured.log"
+          python3 - "$tmp/unconfigured.log" <<'PY'
+          import sys
+          assert 'TG_LOGIN_CLIENTS must list the owner Telegram ID' in open(sys.argv[1]).read()
+          print('Unconfigured server refuses startup')
+          PY
+          if curl -fsS http://127.0.0.1:18083/healthz >/dev/null 2>&1; then
+            echo 'Unconfigured server unexpectedly healthy' >&2
+            exit 1
+          fi
           "${compose[@]}" config --quiet
           "${compose[@]}" config --format json > "$tmp/resolved.json"
           python3 - "$tmp/resolved.json" <<'PY'
@@ -58,7 +83,7 @@ jobs:
           assert not services['db'].get('ports')
           print('Compose read-only/auth/database contract passes')
           PY
-          "${compose[@]}" up -d db server
+          "${compose[@]}" up -d --force-recreate server
           for i in $(seq 1 45); do
             if curl -fsS http://127.0.0.1:18083/healthz >/dev/null; then break; fi
             sleep 2
@@ -102,12 +127,12 @@ jobs:
           else: raise AssertionError('expected Telegram OIDC redirect')
           print('Dynamic OAuth registration survives server restart')
           PY
-          python3 - "$tmp/mctl.env" <<'PY'
+          python3 - "$tmp/settings.yml" <<'PY'
           import sys
           p=sys.argv[1]
           text=open(p).read()
-          assert 'TG_LOGIN_CLIENTS=12345678' in text
-          open(p,'w').write(text.replace('TG_LOGIN_CLIENTS=12345678','TG_LOGIN_CLIENTS='))
+          assert 'TG_LOGIN_CLIENTS: "12345678"' in text
+          open(p,'w').write(text.replace('TG_LOGIN_CLIENTS: "12345678"','TG_LOGIN_CLIENTS: ""'))
           PY
           "${compose[@]}" up -d --force-recreate server
           sleep 3
@@ -116,4 +141,22 @@ jobs:
           import sys
           assert 'TG_LOGIN_CLIENTS must list the owner Telegram ID' in open(sys.argv[1]).read()
           print('Empty owner allowlist refuses startup')
+          PY
+          python3 - "$tmp/settings.yml" <<'PY'
+          import sys
+          p=sys.argv[1]
+          text=open(p).read()
+          assert 'TG_LOGIN_CLIENTS: ""' in text
+          assert 'TELEGRAM_OIDC_CLIENT_SECRET: "' + 'a'*64 + '"' in text
+          text=text.replace('TG_LOGIN_CLIENTS: ""','TG_LOGIN_CLIENTS: "12345678"')
+          text=text.replace('TELEGRAM_OIDC_CLIENT_SECRET: "' + 'a'*64 + '"','TELEGRAM_OIDC_CLIENT_SECRET: ""')
+          open(p,'w').write(text)
+          PY
+          "${compose[@]}" up -d --force-recreate server
+          sleep 3
+          "${compose[@]}" logs --no-color server > "$tmp/missing-oidc.log"
+          python3 - "$tmp/missing-oidc.log" <<'PY'
+          import sys
+          assert 'Telegram API and OIDC settings must be configured' in open(sys.argv[1]).read()
+          print('Missing OIDC credential refuses startup')
           PY
