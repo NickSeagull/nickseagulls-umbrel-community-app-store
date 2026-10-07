@@ -78,7 +78,7 @@ jobs:
           python3 - "$tmp/client.json" "$tmp/client-id" <<'PY'
           import json,sys
           x=json.load(open(sys.argv[1]))
-          assert x['client_id'].startswith('tgmcp_')
+          assert x['client_id'].startswith('tgdcr_')
           open(sys.argv[2],'w').write(x['client_id'])
           print('Synthetic OAuth client registered')
           PY
