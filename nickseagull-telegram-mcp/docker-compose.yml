@@ -8,7 +8,7 @@ services:
       # Do not bypass Umbrel auth for the public browser route.
 
   server:
-    image: ghcr.io/nickseagull/telegram-mcp-umbrel:b57f47d-umbrel1
+    image: ghcr.io/nickseagull/telegram-mcp-umbrel@sha256:6d7194493f5c4112aaffb988122b6b04c4954696ac9c1e5ab24b900d526cdb46
     restart: on-failure
     init: true
     user: "1000:1000"
