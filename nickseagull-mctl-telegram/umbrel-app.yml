@@ -13,11 +13,11 @@ description: >-
   Telegram API credentials, a BotFather OIDC login bot and a stable HTTPS
   hostname in a private environment file before installation. The Telegram
   login bot authenticates the browser; a separate private phone/code/2FA flow
-  connects the Telegram user session. Encrypted session state lives in movable
-  Umbrel app data. Do not paste secrets into chats.
+  connects the Telegram user session. Encrypted session state and OAuth client
+  registrations live in movable Umbrel app data. Do not paste secrets into chats.
 releaseNotes: >-
   Initial package of upstream 0.79.2 with server-side read-only tool filter,
-  local SQLite persistence, OAuth authentication and dedicated generated keys.
+  local Postgres persistence, OAuth authentication and dedicated generated keys.
 developer: mctlhq
 website: https://github.com/mctlhq/mctl-telegram
 repo: https://github.com/NickSeagull/nickseagulls-umbrel-community-app-store

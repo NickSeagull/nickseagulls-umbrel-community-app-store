@@ -1,0 +1,77 @@
+name: mctl-telegram Umbrel package check
+on:
+  pull_request:
+    paths:
+      - .github/workflows/mctl-package-check.yml
+      - nickseagull-mctl-telegram/**
+  workflow_dispatch:
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Compose and protected OAuth boot with synthetic credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          cd nickseagull-mctl-telegram
+          cat > "$tmp/mctl.env" <<'ENV'
+          TG_API_ID=12345678
+          TG_API_HASH=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          TELEGRAM_OIDC_CLIENT_ID=12345678
+          TELEGRAM_OIDC_CLIENT_SECRET=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          PUBLIC_BASE_URL=https://example.invalid
+          TG_LOGIN_CLIENTS=12345678
+          ENV
+          chmod 600 "$tmp/mctl.env"
+          export APP_DATA_DIR="$tmp"
+          export APP_NICKSEAGULL_MCTL_TELEGRAM_JWT_KEY="$(openssl rand -hex 32)"
+          export APP_NICKSEAGULL_MCTL_TELEGRAM_ENCRYPTION_KEY="$(openssl rand -hex 32)"
+          export APP_NICKSEAGULL_MCTL_TELEGRAM_DB_KEY="$(openssl rand -hex 32)"
+          cat > "$tmp/check.yml" <<'YAML'
+          services:
+            app_proxy:
+              image: busybox:1.37
+            server:
+              ports:
+                - "127.0.0.1:18083:8080"
+          YAML
+          compose=(docker compose -f docker-compose.yml -f "$tmp/check.yml" -p mctl-umbrel-check)
+          trap '${compose[@]} down --remove-orphans >/dev/null 2>&1 || true; rm -rf "$tmp"' EXIT
+          "${compose[@]}" config --quiet
+          "${compose[@]}" config --format json > "$tmp/resolved.json"
+          python3 - "$tmp/resolved.json" <<'PY'
+          import json, sys
+          services = json.load(open(sys.argv[1]))['services']
+          app = services['server']
+          assert app['environment']['AUTH_MODE'] == 'local-jwt'
+          assert app['environment']['AUTH_REQUIRED'] == 'true'
+          assert app['environment']['ALLOW_SEND'] == 'false'
+          assert app['environment']['MCP_TOOL_FILTER'] == 'read-only'
+          assert app['environment']['DATABASE_URL'].startswith('postgres://mctl:')
+          assert services['db']['image'].startswith('postgres:16-alpine@sha256:')
+          assert not services['db'].get('ports')
+          print('Compose read-only/auth/database contract passes')
+          PY
+          "${compose[@]}" up -d db server
+          for i in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:18083/healthz >/dev/null; then break; fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:18083/healthz >/dev/null
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18083/mcp)" = 401
+          curl -fsS http://127.0.0.1:18083/.well-known/oauth-protected-resource/mcp > "$tmp/discovery.json"
+          python3 - "$tmp/discovery.json" <<'PY'
+          import json,sys
+          x=json.load(open(sys.argv[1]))
+          assert x['resource'] == 'https://example.invalid/mcp'
+          print('Health, unauthorized MCP, and OAuth protected-resource discovery pass')
+          PY
+          "${compose[@]}" restart server
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:18083/healthz >/dev/null; then break; fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:18083/healthz >/dev/null
