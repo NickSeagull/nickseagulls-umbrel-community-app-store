@@ -3,7 +3,6 @@ package tools
 import (
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -64,7 +63,7 @@ func RegisterStoryTools(s *server.MCPServer) {
 			mcp.WithReadOnlyHintAnnotation(false),
 			mcp.WithDestructiveHintAnnotation(false),
 			mcp.WithString("peer", mcp.Required(), mcp.Description("Chat ID or @username")),
-			mcp.WithString("file_path", mcp.Required(), mcp.Description("Path to the photo or video file")),
+			mcp.WithString("file_path", mcp.Required(), mcp.Description("Absolute path to a direct photo or video file in /media")),
 			mcp.WithString("caption", mcp.Description("Story caption text")),
 			mcp.WithBoolean("pin", mcp.Description("Pin story to profile on expiration")),
 		),
@@ -161,6 +160,11 @@ func handleGetAllStories(_ context.Context, _ mcp.CallToolRequest, input getAllS
 }
 
 func handleSendStory(_ context.Context, _ mcp.CallToolRequest, input sendStoryInput) (*mcp.CallToolResult, error) {
+	f, err := openMediaUpload(input.FilePath)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("invalid file_path: %v", err)), nil
+	}
+	defer f.Close()
 	tgCtx := services.Context()
 
 	peer, err := services.ResolvePeer(tgCtx, input.Peer)
@@ -168,29 +172,21 @@ func handleSendStory(_ context.Context, _ mcp.CallToolRequest, input sendStoryIn
 		return mcp.NewToolResultError(fmt.Sprintf("failed to resolve peer: %v", err)), nil
 	}
 
-	cleanPath := filepath.Clean(input.FilePath)
-	if !filepath.IsAbs(cleanPath) {
-		return mcp.NewToolResultError("file_path must be an absolute path"), nil
-	}
-	if _, err := os.Stat(cleanPath); err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("file not found: %v", err)), nil
-	}
-
 	u := uploader.NewUploader(services.API())
-	uploaded, err := u.FromPath(tgCtx, cleanPath)
+	uploaded, err := u.FromFile(tgCtx, f)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("failed to upload file: %v", err)), nil
 	}
 
 	var media tg.InputMediaClass
-	ext := strings.ToLower(filepath.Ext(cleanPath))
+	ext := strings.ToLower(filepath.Ext(input.FilePath))
 	switch ext {
 	case ".jpg", ".jpeg", ".png", ".webp":
 		media = &tg.InputMediaUploadedPhoto{File: uploaded}
 	default:
 		media = &tg.InputMediaUploadedDocument{
 			File:     uploaded,
-			MimeType: mimeFromPath(cleanPath),
+			MimeType: mimeFromPath(input.FilePath),
 			Attributes: []tg.DocumentAttributeClass{
 				&tg.DocumentAttributeVideo{},
 			},
