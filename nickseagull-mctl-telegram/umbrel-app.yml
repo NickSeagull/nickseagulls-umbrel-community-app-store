@@ -4,20 +4,21 @@ storage:
   dataRoot: data
 category: developer
 name: mctl Telegram
-version: 0.79.2-umbrel1
+version: 0.79.2-umbrel2
 tagline: Read your Telegram chats through an authenticated MCP server
 requiresHttps: true
 description: >-
   Self-hosted Telegram user-account MCP by mctlhq. This package filters the
   server's tools to read-only and disables real sends. Nick must provision
   Telegram API credentials, a BotFather OIDC login bot and a stable HTTPS
-  hostname in a private environment file before installation. The Telegram
+  hostname through Umbrel app settings after installation. The Telegram
   login bot authenticates the browser; a separate private phone/code/2FA flow
   connects the Telegram user session. Encrypted session state and OAuth client
   registrations live in movable Umbrel app data. Do not paste secrets into chats.
 releaseNotes: >-
-  Initial package of upstream 0.79.2 with server-side read-only tool filter,
-  local Postgres persistence, OAuth authentication and dedicated generated keys.
+  Configure Telegram API/OIDC credentials and the owner allowlist using
+  Umbrel app Settings environment variables, not a host env file. Server
+  startup remains fail-closed until configured. Upstream image remains pinned.
 developer: mctlhq
 website: https://github.com/mctlhq/mctl-telegram
 repo: https://github.com/NickSeagull/nickseagulls-umbrel-community-app-store
@@ -30,5 +31,25 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 deterministicPassword: false
+environment:
+  - name: TG_API_ID
+    services: [server]
+    note: Telegram application ID from my.telegram.org/apps (numeric).
+  - name: TG_API_HASH
+    services: [server]
+    note: Telegram application hash from my.telegram.org/apps. Umbrel settings inputs are not secret-masked.
+  - name: TELEGRAM_OIDC_CLIENT_ID
+    services: [server]
+    note: BotFather Login Widget OIDC client ID.
+  - name: TELEGRAM_OIDC_CLIENT_SECRET
+    services: [server]
+    note: BotFather Login Widget OIDC client secret. Umbrel settings inputs are not secret-masked.
+  - name: TG_LOGIN_CLIENTS
+    services: [server]
+    note: Numeric Telegram user ID allowed to connect; required before server startup.
+  - name: PUBLIC_BASE_URL
+    services: [server]
+    default: https://telegram-mcp.p.egregore.io
+    note: Tailnet-only HTTPS origin for OAuth and MCP; do not change without re-registering the BotFather callback.
 submitter: NickSeagull
 submission: ""
