@@ -4,7 +4,7 @@ storage:
   dataRoot: data
 category: developer
 name: Telegram MCP
-version: b57f47d-umbrel1
+version: b57f47d-umbrel2
 tagline: Connect an AI assistant to your Telegram account
 requiresHttps: true
 description: >-
