@@ -1,0 +1,19 @@
+# mctl Telegram on Umbrel
+
+This package replaces the mistakenly selected `nguyenvanduocit/telegram-mcp` app; its source is [mctlhq/mctl-telegram](https://github.com/mctlhq/mctl-telegram/tree/47431f39eb153f99f6e7217ea2246cbb562cc623), Apache-2.0, tag `0.79.2`. The image workflow checks out that exact commit, runs upstream tests and publishes linux/amd64 + linux/arm64. **Pin the published OCI index digest in Compose and verify public pulls before merging.**
+
+## First-run prerequisites (do not paste credentials in chat)
+
+1. Choose a stable HTTPS hostname reachable in the owner's browser **and** from the Hermes MCP client. Configure a trusted reverse proxy to this app's internal `server:8080` endpoint; keep TLS termination and owner control at the proxy. No public host port is exposed by this package. `PUBLIC_BASE_URL` must be this exact origin. Browser login and `/mcp` must resolve consistently; the Umbrel tile's local URL is not the canonical OAuth origin.
+2. Register a Telegram API application at [my.telegram.org/apps](https://my.telegram.org/apps). In [BotFather's Login Widget settings](https://core.telegram.org/bots/telegram-login), register the canonical origin and `https://<your-host>/oauth/telegram/callback`, then obtain the OIDC client ID and secret. The login bot is an identity provider, not a Telegram message-reading bot.
+3. Before installation, put a private `mctl.env` at the app's fixed `${APP_DATA_DIR}` root, based on `mctl.env.example`: `TG_API_ID`, `TG_API_HASH`, `TELEGRAM_OIDC_CLIENT_ID`, `TELEGRAM_OIDC_CLIENT_SECRET`, `PUBLIC_BASE_URL`. Keep it out of Git, chat and screenshots; restrict it to the Umbrel owner/service account. The `env_file` path intentionally lives outside movable `data/` because Umbrel rewrites volume paths on data relocation, not `env_file`. No active Telegram credentials have been provisioned here.
+4. Install through umbrelOS and verify app details/readiness, protected-resource discovery, OAuth callback and session persistence. The app uses an Umbrel-derived, stable 64-hex encryption key and a distinct JWT signing key. SQLite lives under movable `/data`; backups must preserve the device seed required to derive the encryption key. A host change without the seed makes the encrypted session unreadable.
+5. Connect Hermes through `auth: oauth` to `https://<your-host>/mcp` (or an internally reachable URL with matching OAuth metadata/callback). Complete Telegram OIDC and then the separate MTProto phone/code/2FA browser wizard privately. The wizard defaults to **Read + send**—select **Read only**. Validate four read tools (`list_dialogs`, `get_unread_messages`, `get_messages`, `search_messages`) and verify that write tools are absent. Hermes may also set `tools.include` to these four as a second filter.
+
+## Security contract
+
+- Compose explicitly sets `AUTH_MODE=local-jwt`, `AUTH_REQUIRED=true`, `MCP_TOOL_FILTER=read-only` and `ALLOW_SEND=false`. Do not replace this with local-dev auth or a static bearer shared in chat. The server-side read-only filter suppresses all write tools, including pin/delete/admin actions; the send gate independently prevents real message sends.
+- Umbrel `app_proxy` retains its login gate for the local tile. A separately configured HTTPS proxy to the canonical hostname must be reviewed as public-facing; the upstream OAuth server authenticates `/mcp` and account pages. TLS/hostname, Telegram login bot and end-to-end Hermes OAuth compatibility remain deployment gates, not assumed properties of this package.
+- The `mctl.env` file is a required install prerequisite, not a file this repository generates from secrets. Without it Compose should fail closed rather than start an unauthenticated server.
+
+The source, image and deployment have not been connected to a Telegram account by CI; do not claim chat access before a real read-only MCP call succeeds.
