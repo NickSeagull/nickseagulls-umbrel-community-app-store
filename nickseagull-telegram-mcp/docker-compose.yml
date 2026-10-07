@@ -1,0 +1,21 @@
+version: "3.7"
+services:
+  app_proxy:
+    environment:
+      APP_HOST: nickseagull-telegram-mcp_server_1
+      APP_PORT: 8080
+      # Hermes connects to /mcp on the internal Docker network with its own bearer token.
+      # Do not bypass Umbrel auth for the public browser route.
+
+  server:
+    image: ghcr.io/nickseagull/telegram-mcp-umbrel:b57f47d-umbrel1
+    restart: on-failure
+    init: true
+    user: "1000:1000"
+    environment:
+      TELEGRAM_MCP_OWNER_PASSWORD: ${APP_PASSWORD}
+      TELEGRAM_MCP_TOKEN: ${APP_TELEGRAM_MCP_TOKEN}
+      TELEGRAM_MCP_DATA_DIR: /data
+      TELEGRAM_MCP_LISTEN: :8080
+    volumes:
+      - ${APP_DATA_DIR}/data/state:/data
