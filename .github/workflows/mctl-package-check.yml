@@ -39,7 +39,7 @@ jobs:
                 - "127.0.0.1:18083:8080"
           YAML
           compose=(docker compose -f docker-compose.yml -f "$tmp/check.yml" -p mctl-umbrel-check)
-          trap '${compose[@]} down --remove-orphans >/dev/null 2>&1 || true; rm -rf "$tmp"' EXIT
+          trap 'status=$?; if (( status )); then "${compose[@]}" ps -a || true; "${compose[@]}" logs --no-color --tail 60 server db || true; fi; "${compose[@]}" down --remove-orphans >/dev/null 2>&1 || true; sudo rm -rf "$tmp"; exit "$status"' EXIT
           "${compose[@]}" config --quiet
           "${compose[@]}" config --format json > "$tmp/resolved.json"
           python3 - "$tmp/resolved.json" <<'PY'
@@ -51,6 +51,8 @@ jobs:
           assert app['environment']['ALLOW_SEND'] == 'false'
           assert app['environment']['MCP_TOOL_FILTER'] == 'read-only'
           assert app['environment']['DATABASE_URL'].startswith('postgres://mctl:')
+          assert app['entrypoint'] == ['/bin/sh','-ec']
+          assert len(app['command']) == 1 and 'exec /usr/local/bin/mctl-telegram' in app['command'][0]
           assert services['db']['image'].startswith('postgres:16-alpine@sha256:')
           assert not services['db'].get('ports')
           print('Compose read-only/auth/database contract passes')

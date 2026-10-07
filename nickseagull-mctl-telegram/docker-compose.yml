@@ -24,7 +24,8 @@ services:
       MCP_TOOL_FILTER: read-only
       MCP_APPS_ENABLED: "false"
     entrypoint: ["/bin/sh", "-ec"]
-    command: 'test -n "$$TG_LOGIN_CLIENTS" || { printf "%s\n" "TG_LOGIN_CLIENTS must list the owner Telegram ID" >&2; exit 1; }; exec /usr/local/bin/mctl-telegram'
+    command:
+      - 'test -n "$$TG_LOGIN_CLIENTS" || { printf "%s\n" "TG_LOGIN_CLIENTS must list the owner Telegram ID" >&2; exit 1; }; exec /usr/local/bin/mctl-telegram'
     depends_on:
       db:
         condition: service_healthy
