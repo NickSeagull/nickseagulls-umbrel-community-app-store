@@ -1,0 +1,34 @@
+manifestVersion: 2.0
+id: nickseagull-mctl-telegram
+storage:
+  dataRoot: data
+category: developer
+name: mctl Telegram
+version: 0.79.2-umbrel1
+tagline: Read your Telegram chats through an authenticated MCP server
+requiresHttps: true
+description: >-
+  Self-hosted Telegram user-account MCP by mctlhq. This package filters the
+  server's tools to read-only and disables real sends. Nick must provision
+  Telegram API credentials, a BotFather OIDC login bot and a stable HTTPS
+  hostname in a private environment file before installation. The Telegram
+  login bot authenticates the browser; a separate private phone/code/2FA flow
+  connects the Telegram user session. Encrypted session state and OAuth client
+  registrations live in movable Umbrel app data. Do not paste secrets into chats.
+releaseNotes: >-
+  Initial package of upstream 0.79.2 with server-side read-only tool filter,
+  local Postgres persistence, OAuth authentication and dedicated generated keys.
+developer: mctlhq
+website: https://github.com/mctlhq/mctl-telegram
+repo: https://github.com/NickSeagull/nickseagulls-umbrel-community-app-store
+support: https://github.com/mctlhq/mctl-telegram/issues
+dependencies: []
+port: 4583
+icon: https://raw.githubusercontent.com/NickSeagull/nickseagulls-umbrel-community-app-store/master/nickseagull-mctl-telegram/icon.svg
+gallery: []
+path: ""
+defaultUsername: ""
+defaultPassword: ""
+deterministicPassword: false
+submitter: NickSeagull
+submission: ""

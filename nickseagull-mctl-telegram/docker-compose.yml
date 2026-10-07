@@ -1,0 +1,45 @@
+version: "3.7"
+services:
+  app_proxy:
+    environment:
+      APP_HOST: nickseagull-mctl-telegram_server_1
+      APP_PORT: 8080
+      # The browser tile remains Umbrel-authenticated. The canonical OAuth
+      # hostname is configured separately and must terminate HTTPS securely.
+  server:
+    image: ghcr.io/nickseagull/mctl-telegram-umbrel@sha256:d11870ea429c5d481dc8ff9cff46295401976beab934899202e52428bd796361
+    restart: on-failure
+    init: true
+    user: "1000:1000"
+    env_file:
+      - ${APP_DATA_DIR}/mctl.env
+    environment:
+      ADDR: ":8080"
+      AUTH_MODE: local-jwt
+      AUTH_REQUIRED: "true"
+      OAUTH_JWT_SIGNING_KEY: ${APP_NICKSEAGULL_MCTL_TELEGRAM_JWT_KEY}
+      ENCRYPTION_KEY: ${APP_NICKSEAGULL_MCTL_TELEGRAM_ENCRYPTION_KEY}
+      DATABASE_URL: "postgres://mctl:${APP_NICKSEAGULL_MCTL_TELEGRAM_DB_KEY}@db:5432/mctl?sslmode=disable"
+      ALLOW_SEND: "false"
+      MCP_TOOL_FILTER: read-only
+      MCP_APPS_ENABLED: "false"
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - 'test -n "$$TG_LOGIN_CLIENTS" || { printf "%s\n" "TG_LOGIN_CLIENTS must list the owner Telegram ID" >&2; exit 1; }; exec /usr/local/bin/mctl-telegram'
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mctl
+      POSTGRES_PASSWORD: ${APP_NICKSEAGULL_MCTL_TELEGRAM_DB_KEY}
+      POSTGRES_DB: mctl
+    volumes:
+      - ${APP_DATA_DIR}/data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mctl -d mctl"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
