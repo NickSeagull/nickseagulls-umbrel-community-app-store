@@ -39,7 +39,7 @@ jobs:
                 TELEGRAM_OIDC_CLIENT_SECRET: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
                 TG_LOGIN_CLIENTS: "12345678"
                 PUBLIC_BASE_URL: "https://example.invalid"
-                OAUTH_DCR_REDIRECT_URIS: "http://127.0.0.1:48500/callback"
+                OAUTH_DCR_REDIRECT_URIS: "http://127.0.0.1:48500/callback,https://telegram-mcp.p.egregore.io/api/mcp/oauth/callback/telegram"
           YAML
           base=(docker compose -f docker-compose.yml -f "$tmp/check.yml" -p mctl-umbrel-check)
           compose=(docker compose -f docker-compose.yml -f "$tmp/check.yml" -f "$tmp/settings.yml" -p mctl-umbrel-check)
@@ -54,9 +54,12 @@ jobs:
                       'TELEGRAM_OIDC_CLIENT_SECRET', 'TG_LOGIN_CLIENTS'}
           for name in required:
               assert app['environment'][name] == '', name
+          callback = 'https://telegram-mcp.p.egregore.io/api/mcp/oauth/callback/telegram'
+          assert app['environment']['OAUTH_DCR_REDIRECT_URIS'] == callback
           manifest = Path('umbrel-app.yml').read_text()
           exposed = set(re.findall(r'(?m)^  - name: ([A-Z_]+)\n    services: \[server\]$', manifest))
           assert required <= exposed, required - exposed
+          assert '  - name: OAUTH_DCR_REDIRECT_URIS\n    services: [server]\n    default: ' + callback in manifest
           for name in required:
               block = re.search(r'(?ms)^  - name: ' + name + r'\n(.*?)(?=^  - name:|^submitter:)', manifest)
               assert block and not re.search(r'(?m)^    default:', block.group(1)), name
@@ -87,6 +90,7 @@ jobs:
           assert app['environment']['AUTH_REQUIRED'] == 'true'
           assert app['environment']['ALLOW_SEND'] == 'false'
           assert app['environment']['MCP_TOOL_FILTER'] == 'read-only'
+          assert app['environment']['OAUTH_DCR_REDIRECT_URIS'] == 'http://127.0.0.1:48500/callback,https://telegram-mcp.p.egregore.io/api/mcp/oauth/callback/telegram'
           assert app['environment']['DATABASE_URL'].startswith('postgres://mctl:')
           assert app['entrypoint'] == ['/bin/sh','-ec']
           assert len(app['command']) == 1 and 'exec /usr/local/bin/mctl-telegram' in app['command'][0]
@@ -123,6 +127,16 @@ jobs:
           assert x['client_id'].startswith('tgdcr_')
           open(sys.argv[2],'w').write(x['client_id'])
           print('Synthetic OAuth client registered')
+          PY
+          curl -fsS -H 'Content-Type: application/json' \
+            --data '{"client_name":"synthetic-hermes","redirect_uris":["https://telegram-mcp.p.egregore.io/api/mcp/oauth/callback/telegram"]}' \
+            http://127.0.0.1:18083/oauth/register > "$tmp/hermes-client.json"
+          python3 - "$tmp/hermes-client.json" <<'PY'
+          import json,sys
+          x=json.load(open(sys.argv[1]))
+          assert x['client_id'].startswith('tgdcr_')
+          assert x['redirect_uris'] == ['https://telegram-mcp.p.egregore.io/api/mcp/oauth/callback/telegram']
+          print('Hermes exact HTTPS callback accepted by dynamic registration')
           PY
           "${compose[@]}" restart server
           for i in $(seq 1 20); do

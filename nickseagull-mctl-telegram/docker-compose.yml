@@ -23,6 +23,9 @@ services:
       ADDR: ":8080"
       AUTH_MODE: local-jwt
       AUTH_REQUIRED: "true"
+      # Byte-exact OAuth DCR exception for Hermes' dashboard callback only.
+      # Umbrel App Settings can override this if the private HTTPS origin changes.
+      OAUTH_DCR_REDIRECT_URIS: "https://telegram-mcp.p.egregore.io/api/mcp/oauth/callback/telegram"
       OAUTH_JWT_SIGNING_KEY: ${APP_NICKSEAGULL_MCTL_TELEGRAM_JWT_KEY}
       ENCRYPTION_KEY: ${APP_NICKSEAGULL_MCTL_TELEGRAM_ENCRYPTION_KEY}
       DATABASE_URL: "postgres://mctl:${APP_NICKSEAGULL_MCTL_TELEGRAM_DB_KEY}@db:5432/mctl?sslmode=disable"
