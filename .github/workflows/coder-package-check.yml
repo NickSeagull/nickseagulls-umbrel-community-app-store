@@ -54,6 +54,11 @@ jobs:
             sleep 2
           done
           curl -fsS http://127.0.0.1:17084/api/v2/buildinfo > /dev/null
-          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:17084/api/v2/users/me)" = 401
-          test -d "$tmp/data/postgres/base"
+          status="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:17084/api/v2/users/me)"
+          echo "Unauthenticated Coder API status after restart: $status"
+          test "$status" = 401
+          if ! test -d "$tmp/data/postgres/base"; then
+            echo 'PostgreSQL base directory missing after restart' >&2
+            exit 1
+          fi
           echo 'Coder API, unauthenticated access denial, PostgreSQL state and restart: OK'
