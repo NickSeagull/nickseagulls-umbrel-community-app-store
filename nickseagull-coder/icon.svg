@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Coder app icon">
+  <rect width="256" height="256" rx="48" fill="#17171c"/>
+  <path d="M151 59H118C76 59 50 87 50 128s26 69 68 69h33v-33h-33c-21 0-34-14-34-36s13-36 34-36h33z" fill="#fff"/>
+  <path d="M174 86h32v84h-32z" fill="#f5b341"/>
+</svg>

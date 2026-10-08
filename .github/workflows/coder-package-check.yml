@@ -1,0 +1,57 @@
+name: Coder Umbrel package check
+on:
+  pull_request:
+    paths:
+      - .github/workflows/coder-package-check.yml
+      - nickseagull-coder/**
+      - tests/test_coder_package.py
+  workflow_dispatch:
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Static package checks
+        run: |
+          python3 -m pip install PyYAML
+          python3 -m unittest discover -s tests -p 'test_coder_package.py' -v
+          sh -n nickseagull-coder/exports.sh
+          git diff --check
+      - name: Synthetic Coder, database and restart smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          export APP_DATA_DIR="$tmp"
+          export APP_NICKSEAGULL_CODER_DB_PASSWORD='synthetic-ci-password-only'
+          export DEVICE_DOMAIN_NAME='example.invalid'
+          mkdir -p "$tmp/data/coder" "$tmp/data/postgres" "$tmp/data/ssh"
+          sudo chown 1000:1000 "$tmp/data/coder" "$tmp/data/ssh"
+          sudo chmod 0700 "$tmp/data/ssh"
+          printf 'services:\n  app_proxy:\n    image: busybox:1.37\n  server:\n    ports:\n      - "127.0.0.1:17084:7080"\n' > "$tmp/check.yml"
+          cd nickseagull-coder
+          compose=(docker compose -f docker-compose.yml -f "$tmp/check.yml" -p coder-umbrel-check)
+          trap 'status=$?; if (( status )); then "${compose[@]}" ps -a || true; "${compose[@]}" logs --no-color --tail 60 server database || true; fi; "${compose[@]}" down --remove-orphans >/dev/null 2>&1 || true; sudo rm -rf "$tmp"; exit "$status"' EXIT
+          "${compose[@]}" config --quiet
+          "${compose[@]}" up -d database server
+          for i in $(seq 1 90); do
+            if curl -fsS http://127.0.0.1:17084/api/v2/buildinfo > "$tmp/buildinfo.json" 2>/dev/null; then break; fi
+            sleep 2
+          done
+          python3 - "$tmp/buildinfo.json" <<'PY'
+          import json,sys
+          data=json.load(open(sys.argv[1]))
+          assert data['version'], data
+          print('Coder API ready:',data['version'])
+          PY
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:17084/api/v2/users/me)" = 401
+          "${compose[@]}" restart database server
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:17084/api/v2/buildinfo > /dev/null 2>&1; then break; fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:17084/api/v2/buildinfo > /dev/null
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:17084/api/v2/users/me)" = 401
+          test -d "$tmp/data/postgres/base"
+          echo 'Coder API, unauthenticated access denial, PostgreSQL state and restart: OK'

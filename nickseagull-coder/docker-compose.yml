@@ -1,0 +1,49 @@
+version: "3.7"
+services:
+  app_proxy:
+    environment:
+      APP_HOST: nickseagull-coder_server_1
+      APP_PORT: 7080
+      # Agents, CLI clients and DERP relays cannot send Umbrel cookies.
+      # Coder's own auth and DERP cryptographic identity are the boundary.
+      PROXY_AUTH_WHITELIST: "/api/*,/derp/*"
+
+  server:
+    image: ghcr.io/coder/coder:v2.36.7@sha256:e8b2743529aea6a1e77bba764c8ec4a04dec65d27ca9caa0ec0b2dbcd3db0565
+    restart: on-failure
+    init: true
+    stop_grace_period: 1m
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      CODER_HTTP_ADDRESS: 0.0.0.0:7080
+      # Override in Umbrel app Settings with an origin reachable by both hosts
+      # and every workspace agent. Do not use localhost or an Umbrel cookie URL.
+      CODER_ACCESS_URL: "http://${DEVICE_DOMAIN_NAME}:4584"
+      CODER_PG_CONNECTION_URL: "postgresql://coder:${APP_NICKSEAGULL_CODER_DB_PASSWORD}@database:5432/coder?sslmode=disable"
+      # Built-in Terraform daemons; no Premium external provisioner needed.
+      CODER_PROVISIONER_DAEMONS: "1"
+      # Umbrel's reverse proxy supports WebSockets, not necessarily Upgrade: derp.
+      CODER_DERP_FORCE_WEBSOCKETS: "true"
+    volumes:
+      - ${APP_DATA_DIR}/data/coder:/home/coder
+      # Owner stages an SSH identity and pinned known_hosts here later. A read-only
+      # directory mount avoids leaking private keys through Compose environment.
+      - ${APP_DATA_DIR}/data/ssh:/home/coder/.ssh:ro
+    # Deliberately NO Docker socket: a future template uses SSH Docker endpoints.
+
+  database:
+    image: docker.io/library/postgres:17.6-alpine@sha256:ef257d85f76e48da1c64832459b59fcaba1a4dac97bf5d7450c77753542eee94
+    restart: on-failure
+    environment:
+      POSTGRES_USER: coder
+      POSTGRES_DB: coder
+      POSTGRES_PASSWORD: ${APP_NICKSEAGULL_CODER_DB_PASSWORD}
+    volumes:
+      - ${APP_DATA_DIR}/data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U coder -d coder"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
