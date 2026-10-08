@@ -38,10 +38,12 @@ class CoderPackageTests(unittest.TestCase):
         self.assertEqual(server["environment"]["CODER_ACCESS_URL"], "http://${DEVICE_DOMAIN_NAME}:4584")
         self.assertNotIn("ports", server)
 
-    def test_database_and_ssh_persistence_without_host_socket(self):
+    def test_database_ssh_and_local_docker_persistence(self):
         s = self.compose["services"]
         self.assertEqual(s["server"]["depends_on"]["database"]["condition"], "service_healthy")
         self.assertIn("${APP_DATA_DIR}/data/coder:/home/coder", s["server"]["volumes"])
+        self.assertIn("/var/run/docker.sock:/var/run/docker.sock", s["server"]["volumes"])
+        self.assertEqual(s["server"]["group_add"], ["${APP_NICKSEAGULL_CODER_DOCKER_GID}"])
         self.assertIn("${APP_DATA_DIR}/data/ssh:/home/coder/.ssh:ro", s["server"]["volumes"])
         self.assertIn("${APP_DATA_DIR}/data/postgres:/var/lib/postgresql/data", s["database"]["volumes"])
         for d in ("coder", "ssh", "postgres"):
@@ -49,11 +51,11 @@ class CoderPackageTests(unittest.TestCase):
         self.assertEqual(s["database"]["environment"]["POSTGRES_PASSWORD"], "${APP_NICKSEAGULL_CODER_DB_PASSWORD}")
         self.assertIn("${APP_NICKSEAGULL_CODER_DB_PASSWORD}", s["server"]["environment"]["CODER_PG_CONNECTION_URL"])
         self.assertIn("derive_entropy", (APP / "exports.sh").read_text())
+        self.assertIn('stat -c %g /var/run/docker.sock', (APP / "exports.sh").read_text())
         for name in ("server", "database"):
             self.assertNotIn("ports", s[name])
             for disallowed in ("privileged", "cap_add", "network_mode", "security_opt"):
                 self.assertNotIn(disallowed, s[name])
-        self.assertNotIn("/var/run/docker.sock", (APP / "docker-compose.yml").read_text())
         self.assertEqual(sorted(p.name for p in (APP / "data" / "ssh").iterdir()), [".gitkeep"])
 
     def test_pinned_images(self):

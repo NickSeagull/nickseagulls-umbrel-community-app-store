@@ -13,6 +13,11 @@ services:
     restart: on-failure
     init: true
     stop_grace_period: 1m
+    # The built-in provisioner runs as non-root and needs the host Docker
+    # socket's group to create Umbrel-local workspaces. This grants host-level
+    # Docker control; only trusted template authors may use this instance.
+    group_add:
+      - ${APP_NICKSEAGULL_CODER_DOCKER_GID}
     depends_on:
       database:
         condition: service_healthy
@@ -28,10 +33,11 @@ services:
       CODER_DERP_FORCE_WEBSOCKETS: "true"
     volumes:
       - ${APP_DATA_DIR}/data/coder:/home/coder
+      - /var/run/docker.sock:/var/run/docker.sock
       # Owner stages an SSH identity and pinned known_hosts here later. A read-only
       # directory mount avoids leaking private keys through Compose environment.
       - ${APP_DATA_DIR}/data/ssh:/home/coder/.ssh:ro
-    # Deliberately NO Docker socket: a future template uses SSH Docker endpoints.
+    # The local worker uses this socket; corthan uses a pinned SSH endpoint.
 
   database:
     image: docker.io/library/postgres:17.6-alpine@sha256:ef257d85f76e48da1c64832459b59fcaba1a4dac97bf5d7450c77753542eee94
