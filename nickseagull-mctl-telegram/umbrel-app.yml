@@ -4,7 +4,7 @@ storage:
   dataRoot: data
 category: developer
 name: mctl Telegram
-version: 0.79.2-umbrel3
+version: 0.79.2-umbrel4
 tagline: Read your Telegram chats through an authenticated MCP server
 requiresHttps: true
 description: >-
@@ -16,10 +16,9 @@ description: >-
   connects the Telegram user session. Encrypted session state and OAuth client
   registrations live in movable Umbrel app data. Do not paste secrets into chats.
 releaseNotes: >-
-  Add a private Docker-network TLS passthrough route for the canonical MCP
-  hostname. Hermes keeps HTTPS certificate validation and OAuth URLs intact;
-  no NPM restart or new public port is needed. Existing credentials and
-  Telegram sessions remain in persistent app data.
+  Permit dynamic OAuth registration for Hermes' one exact HTTPS callback URI.
+  The existing private proxy route forwards only that callback to Hermes;
+  credentials, read-only safeguards and Telegram sessions remain unchanged.
 developer: mctlhq
 website: https://github.com/mctlhq/mctl-telegram
 repo: https://github.com/NickSeagull/nickseagulls-umbrel-community-app-store
@@ -52,5 +51,9 @@ environment:
     services: [server]
     default: https://telegram-mcp.p.egregore.io
     note: Tailnet-only HTTPS origin for OAuth and MCP; do not change without re-registering the BotFather callback.
+  - name: OAUTH_DCR_REDIRECT_URIS
+    services: [server]
+    default: https://telegram-mcp.p.egregore.io/api/mcp/oauth/callback/telegram
+    note: Byte-exact allowlist for Hermes OAuth callback; change only if the private HTTPS callback route changes.
 submitter: NickSeagull
 submission: ""
