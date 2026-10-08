@@ -57,13 +57,7 @@ jobs:
           status="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:17084/api/v2/users/me)"
           echo "Unauthenticated Coder API status after restart: $status"
           test "$status" = 401
-          if ! test -d "$tmp/data/postgres/base"; then
-            echo 'PostgreSQL base directory missing after restart' >&2
-            docker inspect coder-umbrel-check-database-1 --format '{{json .Mounts}}' >&2
-            python3 - "$tmp/data/postgres" <<'PY'
-          import os,sys
-          print('Host DB directory entries:',os.listdir(sys.argv[1]))
-          PY
-            exit 1
-          fi
+          # postgres owns PGDATA (0700), so the runner user cannot stat its
+          # contents on the host; check from inside the container instead.
+          "${compose[@]}" exec -T database test -s /var/lib/postgresql/data/PG_VERSION
           echo 'Coder API, unauthenticated access denial, PostgreSQL state and restart: OK'
