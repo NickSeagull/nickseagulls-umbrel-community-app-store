@@ -4,7 +4,7 @@ storage:
   dataRoot: data
 category: developer
 name: mctl Telegram
-version: 0.79.2-umbrel2
+version: 0.79.2-umbrel3
 tagline: Read your Telegram chats through an authenticated MCP server
 requiresHttps: true
 description: >-
@@ -16,9 +16,10 @@ description: >-
   connects the Telegram user session. Encrypted session state and OAuth client
   registrations live in movable Umbrel app data. Do not paste secrets into chats.
 releaseNotes: >-
-  Configure Telegram API/OIDC credentials and the owner allowlist using
-  Umbrel app Settings environment variables, not a host env file. Server
-  startup remains fail-closed until configured. Upstream image remains pinned.
+  Add a private Docker-network TLS passthrough route for the canonical MCP
+  hostname. Hermes keeps HTTPS certificate validation and OAuth URLs intact;
+  no NPM restart or new public port is needed. Existing credentials and
+  Telegram sessions remain in persistent app data.
 developer: mctlhq
 website: https://github.com/mctlhq/mctl-telegram
 repo: https://github.com/NickSeagull/nickseagulls-umbrel-community-app-store

@@ -75,6 +75,9 @@ jobs:
             exit 1
           fi
           "${compose[@]}" config --quiet
+          docker run --rm -v "$PWD/hooks/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro" \
+            haproxy:3.2-alpine@sha256:5d97434a423c2533cfeb42874d45cf6d69a840b60334582dfbfd5008e94c80be \
+            haproxy -c -f /usr/local/etc/haproxy/haproxy.cfg
           "${compose[@]}" config --format json > "$tmp/resolved.json"
           python3 - "$tmp/resolved.json" <<'PY'
           import json, sys
@@ -89,7 +92,13 @@ jobs:
           assert len(app['command']) == 1 and 'exec /usr/local/bin/mctl-telegram' in app['command'][0]
           assert services['db']['image'].startswith('postgres:16-alpine@sha256:')
           assert not services['db'].get('ports')
-          print('Compose read-only/auth/database contract passes')
+          route = services['tls_route']
+          assert route['image'] == 'haproxy:3.2-alpine@sha256:5d97434a423c2533cfeb42874d45cf6d69a840b60334582dfbfd5008e94c80be'
+          assert route['networks']['default']['aliases'] == ['telegram-mcp.p.egregore.io']
+          assert not route.get('ports') and route['read_only'] is True
+          assert route['cap_drop'] == ['ALL'] and route['cap_add'] == ['NET_BIND_SERVICE']
+          assert route['volumes'][0]['target'] == '/usr/local/etc/haproxy/haproxy.cfg'
+          print('Compose read-only/auth/database and private TLS-route contracts pass')
           PY
           "${compose[@]}" up -d --force-recreate server
           for i in $(seq 1 45); do
