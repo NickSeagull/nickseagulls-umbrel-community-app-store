@@ -46,9 +46,11 @@ jobs:
           print('Coder API ready:',data['version'])
           PY
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:17084/api/v2/users/me)" = 401
-          "${compose[@]}" restart database server
+          "${compose[@]}" stop server database
+          "${compose[@]}" up -d database server
           for i in $(seq 1 60); do
-            if curl -fsS http://127.0.0.1:17084/api/v2/buildinfo > /dev/null 2>&1; then break; fi
+            if curl -fsS http://127.0.0.1:17084/api/v2/buildinfo > /dev/null 2>&1 &&
+               test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:17084/api/v2/users/me)" = 401; then break; fi
             sleep 2
           done
           curl -fsS http://127.0.0.1:17084/api/v2/buildinfo > /dev/null
