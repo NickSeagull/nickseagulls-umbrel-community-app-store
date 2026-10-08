@@ -59,6 +59,11 @@ jobs:
           test "$status" = 401
           if ! test -d "$tmp/data/postgres/base"; then
             echo 'PostgreSQL base directory missing after restart' >&2
+            docker inspect coder-umbrel-check-database-1 --format '{{json .Mounts}}' >&2
+            python3 - "$tmp/data/postgres" <<'PY'
+          import os,sys
+          print('Host DB directory entries:',os.listdir(sys.argv[1]))
+          PY
             exit 1
           fi
           echo 'Coder API, unauthenticated access denial, PostgreSQL state and restart: OK'
