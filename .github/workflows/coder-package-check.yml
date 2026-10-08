@@ -25,7 +25,6 @@ jobs:
           tmp="$(mktemp -d)"
           export APP_DATA_DIR="$tmp"
           export APP_NICKSEAGULL_CODER_DB_PASSWORD='synthetic-ci-password-only'
-          export APP_NICKSEAGULL_CODER_DOCKER_GID="$(stat -c %g /var/run/docker.sock)"
           export DEVICE_DOMAIN_NAME='example.invalid'
           mkdir -p "$tmp/data/coder" "$tmp/data/postgres" "$tmp/data/ssh"
           sudo chown 1000:1000 "$tmp/data/coder" "$tmp/data/ssh"
