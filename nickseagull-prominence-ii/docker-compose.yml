@@ -1,7 +1,7 @@
 services:
   app_proxy:
     environment:
-      APP_HOST: status
+      APP_HOST: nickseagull-prominence-ii_status_1
       APP_PORT: 8080
 
   server:

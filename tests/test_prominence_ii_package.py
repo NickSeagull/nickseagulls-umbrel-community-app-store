@@ -1,5 +1,6 @@
 """Package-contract checks that run without a Minecraft daemon or Playit account."""
 import importlib.util
+from importlib.machinery import SourceFileLoader
 import os
 from pathlib import Path
 import socket
@@ -23,9 +24,12 @@ class PackageTests(unittest.TestCase):
         m, services = self.manifest, self.compose["services"]
         self.assertEqual(m["id"], ROOT.name)
         self.assertEqual(m["storage"], {"dataRoot": "data"})
-        self.assertEqual(services["app_proxy"]["environment"], {"APP_HOST": "status", "APP_PORT": 8080})
+        self.assertEqual(services["app_proxy"]["environment"], {"APP_HOST": "nickseagull-prominence-ii_status_1", "APP_PORT": 8080})
         self.assertEqual(m["port"], 4584)
-        self.assertTrue((ROOT / "status.py").is_file())
+        self.assertTrue((ROOT / "status.py.template").is_file())
+        self.assertFalse((ROOT / "status.py").exists())
+        for directory in ("minecraft", "curseforge-downloads"):
+            self.assertTrue((ROOT / "data" / directory / ".gitkeep").is_file())
         settings = {(s["name"], tuple(s["services"])) for s in m["environment"]}
         for service, key in (("server", "EULA"), ("server", "WHITELIST"),
                              ("server", "CF_FILE_ID"), ("playit", "SECRET_KEY")):
@@ -48,7 +52,8 @@ class PackageTests(unittest.TestCase):
         self.assertTrue(any(v.endswith("/data/curseforge-downloads:/downloads") for v in services["server"]["volumes"]))
 
     def test_status_page_offline_and_online(self):
-        spec = importlib.util.spec_from_file_location("prominence_status", ROOT / "status.py")
+        source = ROOT / "status.py.template"
+        spec = importlib.util.spec_from_loader("prominence_status", SourceFileLoader("prominence_status", str(source)))
         assert spec is not None and spec.loader is not None
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
