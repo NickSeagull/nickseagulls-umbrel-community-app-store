@@ -35,13 +35,13 @@ class PackageTests(unittest.TestCase):
     def test_private_fail_closed_defaults(self):
         services = self.compose["services"]
         env = services["server"]["environment"]
-        self.assertEqual(env["EULA"], "FALSE")
+        self.assertEqual(env["EULA"], "TRUE")
         self.assertEqual(env["MODPACK_PLATFORM"], "AUTO_CURSEFORGE")
         self.assertEqual(env["CF_FILE_ID"], "9094769")
         self.assertEqual(env["ENABLE_WHITELIST"], "TRUE")
         self.assertEqual(env["ONLINE_MODE"], "TRUE")
         self.assertEqual(env["EXISTING_WHITELIST_FILE"], "SYNCHRONIZE")
-        self.assertEqual(services["playit"]["environment"]["SECRET_KEY"], "")
+        self.assertEqual(services["playit"]["environment"]["SECRET_KEY"], "${PLAYIT_SECRET_KEY:-}")
         self.assertEqual(services["playit"]["network_mode"], "service:server")
         self.assertFalse(any("ports" in svc or "privileged" in svc for svc in services.values()))
         self.assertTrue(any(v.endswith("/data/minecraft:/data") for v in services["server"]["volumes"]))

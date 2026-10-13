@@ -5,7 +5,7 @@ storage:
 environment:
   - name: EULA
     services: [server]
-    note: Set TRUE only after accepting the Minecraft EULA at aka.ms/MinecraftEULA.
+    note: The owner accepted the Minecraft EULA; default TRUE. See aka.ms/MinecraftEULA.
   - name: SECRET_KEY
     services: [playit]
     note: Generate at playit.gg/account/setup/wizard/new-account/docker/docker-name; stored as an ordinary Umbrel app setting, not a secret vault.
@@ -29,9 +29,11 @@ description: >-
   public Minecraft Java address without port forwarding or client software.
   It does not expose the game port on the Umbrel host.
 
-  Setup is required: accept the Minecraft EULA, enter your own playit
-  agent key and Minecraft whitelist in this app's Umbrel Settings, then
-  create a Minecraft Java tunnel to 127.0.0.1:25565 in playit's dashboard.
+  The Minecraft EULA is accepted by the owner and enabled by default.
+  Setup still requires your own playit agent key as an environment variable
+  (SECRET_KEY in this app's Umbrel Settings, or PLAYIT_SECRET_KEY supplied
+  to Compose) and Minecraft usernames in the WHITELIST setting. Create a
+  Minecraft Java tunnel to 127.0.0.1:25565 in playit's dashboard.
   The playit key in Umbrel Settings is an ordinary, unmasked environment
   value; it is not stored in a secret vault. The server's browser page
   shows the setup steps and local listener status. Back up the world before

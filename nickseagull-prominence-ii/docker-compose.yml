@@ -9,8 +9,8 @@ services:
     restart: on-failure
     stop_grace_period: 2m
     environment:
-      # EULA is deliberately false until the owner accepts Mojang's EULA in app settings.
-      EULA: "FALSE"
+      # Owner explicitly accepted Mojang's EULA.
+      EULA: "TRUE"
       MODPACK_PLATFORM: AUTO_CURSEFORGE
       CF_SLUG: prominence-2-hasturian-era
       # Pin the CLIENT file. AUTO_CURSEFORGE cannot process the server archive's missing manifest.
@@ -36,7 +36,9 @@ services:
     # no host-published Minecraft port or privileged host networking needed.
     network_mode: service:server
     environment:
-      SECRET_KEY: ""
+      # PLAYIT_SECRET_KEY may be supplied in Umbrel's app environment;
+      # the per-app SECRET_KEY setting can override this Compose default.
+      SECRET_KEY: ${PLAYIT_SECRET_KEY:-}
 
   status:
     image: python:3.13.9-alpine3.22@sha256:e5fa639e49b85986c4481e28faa2564b45aa8021413f31026c3856e5911618b1

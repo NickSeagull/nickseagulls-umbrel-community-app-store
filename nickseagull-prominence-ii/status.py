@@ -36,10 +36,10 @@ small{{color:#aeb6c7}}li{{margin:.75rem 0}}</style>
 <h1>Prominence II: Hasturian Era</h1>
 <p>Server: <strong style="color:{color}">{escape(label)}</strong></p>
 <p>Fabric 1.20.1 · client pack v4.1.3 · Java 17 · private TCP 25565</p>
-<ol><li>Accept the <a href="https://aka.ms/MinecraftEULA">Minecraft EULA</a>, then set
-<code>EULA=TRUE</code> in this app's Umbrel Settings.</li>
-<li>Create a <a href="https://playit.gg/account/setup/wizard/new-account/docker/docker-name">playit Docker agent</a>.
-Set its generated key as <code>SECRET_KEY</code> in this app's Settings (do not share the key).
+<p>Minecraft EULA accepted by the owner; the server starts with <code>EULA=TRUE</code>.</p>
+<ol><li>Create a <a href="https://playit.gg/account/setup/wizard/new-account/docker/docker-name">playit Docker agent</a>.
+Supply its generated key as <code>PLAYIT_SECRET_KEY</code> in Umbrel's app environment, or set
+<code>SECRET_KEY</code> in this app's Settings (do not share the key).
 In playit's dashboard create a <b>Minecraft Java</b> tunnel targeting <code>127.0.0.1:25565</code>.
 The agent shares the server's network namespace.</li>
 <li>Add Minecraft usernames to <code>WHITELIST</code> in app Settings (comma separated),
