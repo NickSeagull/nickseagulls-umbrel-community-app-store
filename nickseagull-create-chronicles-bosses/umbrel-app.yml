@@ -1,0 +1,54 @@
+manifestVersion: 1
+id: nickseagull-create-chronicles-bosses
+storage:
+  dataRoot: data
+environment:
+  - name: EULA
+    services: [server]
+    note: The owner accepted the Minecraft EULA; default TRUE. See aka.ms/MinecraftEULA.
+  - name: SECRET_KEY
+    services: [playit]
+    note: Generate at playit.gg/account/setup/wizard/new-account/docker/docker-name; stored as an ordinary Umbrel app setting, not a secret vault.
+  - name: WHITELIST
+    services: [server]
+    note: Comma-separated Minecraft account names. Keep the whitelist enabled.
+  - name: CF_FILE_ID
+    services: [server]
+    note: Client pack CurseForge file ID, not server archive ID. Back up world before changing; clients must match.
+  - name: MAX_MEMORY
+    services: [server]
+    note: JVM max heap (default 8G); leave memory for the OS and other apps.
+category: gaming
+name: Create Chronicles Minecraft Server
+version: "2.5.3-1"
+tagline: Private Create Chronicles server with playit.gg tunnel
+description: >-
+  Runs Create Chronicles: Bosses and Beyond v2.5.3 on Minecraft 1.20.1 Forge,
+  using itzg/docker-minecraft-server's pinned AUTO_CURSEFORGE installer.
+  This app includes a private playit.gg agent so players can join its
+  public Minecraft Java address without port forwarding or client software.
+  It does not expose the game port on the Umbrel host.
+
+  The Minecraft EULA is accepted by the owner and enabled by default.
+  Setup still requires your own playit agent key as an environment variable
+  (SECRET_KEY in this app's Umbrel Settings, or PLAYIT_SECRET_KEY supplied
+  to Compose) and Minecraft usernames in the WHITELIST setting. Create a
+  Minecraft Java tunnel to 127.0.0.1:25565 in playit's dashboard.
+  The playit key in Umbrel Settings is an ordinary, unmasked environment
+  value; it is not stored in a secret vault. The server's browser page
+  shows the setup steps and local listener status. Back up the world before
+  pack upgrades, and use the same client pack version for every player.
+releaseNotes: "Initial package of Create Chronicles v2.5.3 with a playit.gg sidecar."
+developer: itzg, Reyals and playit.gg
+website: https://www.curseforge.com/minecraft/modpacks/create-chronicles-bosses-and-beyond
+dependencies: []
+repo: https://github.com/itzg/docker-minecraft-server
+support: https://github.com/itzg/docker-minecraft-server/issues
+port: 4585
+gallery: []
+path: ""
+defaultUsername: ""
+defaultPassword: ""
+icon: https://raw.githubusercontent.com/NickSeagull/nickseagulls-umbrel-community-app-store/master/nickseagull-create-chronicles-bosses/icon.svg
+submitter: NickSeagull
+submission: https://github.com/NickSeagull/nickseagulls-umbrel-community-app-store
