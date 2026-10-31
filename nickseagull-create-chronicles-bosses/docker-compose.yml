@@ -1,0 +1,53 @@
+services:
+  app_proxy:
+    environment:
+      APP_HOST: nickseagull-create-chronicles-bosses_status_1
+      APP_PORT: 8080
+
+  server:
+    image: itzg/minecraft-server:2026.10.0-java17@sha256:67004c00a459dc69e252bc4931285cc6153e958d83a3c32f9dd8db8d7704ccb4
+    restart: on-failure
+    stop_grace_period: 2m
+    environment:
+      # Owner explicitly accepted Mojang's EULA.
+      EULA: "TRUE"
+      MODPACK_PLATFORM: AUTO_CURSEFORGE
+      CF_SLUG: create-chronicles-bosses-and-beyond
+      # Pin the CLIENT file. AUTO_CURSEFORGE cannot process the server archive's missing manifest.
+      CF_FILE_ID: "6718803"
+      INIT_MEMORY: 2G
+      MAX_MEMORY: 8G
+      ONLINE_MODE: "TRUE"
+      ENABLE_WHITELIST: "TRUE"
+      WHITELIST: ""
+      EXISTING_WHITELIST_FILE: SYNCHRONIZE
+      MAX_PLAYERS: "4"
+      VIEW_DISTANCE: "8"
+      SIMULATION_DISTANCE: "6"
+      MOTD: "Create Chronicles: Bosses and Beyond v2.5.3"
+    volumes:
+      - ${APP_DATA_DIR}/data/minecraft:/data
+      - ${APP_DATA_DIR}/data/curseforge-downloads:/downloads
+
+  playit:
+    image: ghcr.io/playit-cloud/playit-agent:1.0.8@sha256:2c69d171b12ea907a1bf1f3fcf06d75de4458c3a3792022fe95375ed922e0bf1
+    restart: on-failure
+    # Loopback target 127.0.0.1:25565 inside the server network namespace;
+    # no host-published Minecraft port or privileged host networking needed.
+    network_mode: service:server
+    environment:
+      # PLAYIT_SECRET_KEY may be supplied in Umbrel's app environment;
+      # the per-app SECRET_KEY setting can override this Compose default.
+      SECRET_KEY: ${PLAYIT_SECRET_KEY:-}
+
+  status:
+    image: python:3.13.9-alpine3.22@sha256:e5fa639e49b85986c4481e28faa2564b45aa8021413f31026c3856e5911618b1
+    restart: on-failure
+    user: "1000:1000"
+    command: ["python3", "-B", "/app/status.py"]
+    volumes:
+      - ${APP_DATA_DIR}/status.py:/app/status.py:ro
+    environment:
+      PYTHONDONTWRITEBYTECODE: "1"
+      MC_HOST: server
+      MC_PORT: "25565"
