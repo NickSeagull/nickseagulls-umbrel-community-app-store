@@ -1,0 +1,38 @@
+manifestVersion: 2.0
+id: nickseagull-coder
+storage:
+  dataRoot: data
+environment:
+  - name: CODER_ACCESS_URL
+    services: [server]
+    note: Stable HTTP(S) origin reachable by Coder users and agents on both hosts; verify DNS, TLS and WebSockets before creating workspaces.
+category: developer
+name: Coder
+version: "2.36.7"
+tagline: Self-hosted development workspaces with Coder
+description: >-
+  Coder runs a web control plane with PostgreSQL and one built-in Terraform
+  provisioner. Create the first Coder account in the web UI. The Umbrel tile
+  requires Umbrel login; /api/* and /derp/* bypass its cookie gate so agents
+  and CLI clients can connect, relying on Coder's API authentication and DERP
+  cryptographic identity.
+  Set CODER_ACCESS_URL to a stable origin reachable from every workspace.
+  Docker hosts and SSH credentials are not configured by this package.
+  Stage a dedicated restricted SSH identity and pinned host keys privately
+  before using a future two-host Docker template. The provisioner can control
+  any Docker host granted to that identity; do not run untrusted templates.
+releaseNotes: ""
+developer: Coder
+website: https://coder.com
+repo: https://github.com/coder/coder
+support: https://github.com/coder/coder/issues
+dependencies: []
+port: 4584
+icon: https://raw.githubusercontent.com/NickSeagull/nickseagulls-umbrel-community-app-store/master/nickseagull-coder/icon.svg
+gallery: []
+path: ""
+defaultUsername: ""
+defaultPassword: ""
+deterministicPassword: false
+submitter: NickSeagull
+submission: https://github.com/NickSeagull/nickseagulls-umbrel-community-app-store/pull/13
