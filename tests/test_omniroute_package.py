@@ -52,7 +52,8 @@ class OmniRoutePackageTests(unittest.TestCase):
     def test_images_are_immutable_and_upstream_stable(self):
         for name in ("server", "redis"):
             self.assertIn("@sha256:", self.compose["services"][name]["image"])
-        self.assertEqual(self.manifest["version"], "3.8.51")
+        self.assertEqual(self.manifest["version"], "3.8.53")
+        self.assertIn(":3.8.53@sha256:", self.compose["services"]["server"]["image"])
 
 
 if __name__ == "__main__":
