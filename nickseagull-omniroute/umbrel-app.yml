@@ -4,7 +4,7 @@ storage:
   dataRoot: data
 category: developer
 name: OmniRoute
-version: "3.8.51"
+version: "3.8.53"
 tagline: Route AI model requests from a self-hosted gateway
 description: >-
   OmniRoute provides a web dashboard and an OpenAI-compatible API gateway.
@@ -17,7 +17,10 @@ description: >-
   or subscription account rotation. Use only provider credentials and usage
   patterns permitted by their terms. A ChatGPT subscription is not a general
   OpenAI API entitlement.
-releaseNotes: ""
+releaseNotes: >-
+  Update to OmniRoute 3.8.53. Adds per-API-key preferred connections with
+  fallback, model health reporting, and new provider/model support. Includes
+  upstream bug fixes from 3.8.52 and 3.8.53.
 developer: OmniRoute contributors
 website: https://github.com/diegosouzapw/OmniRoute
 dependencies: []
