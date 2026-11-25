@@ -64,7 +64,8 @@ class PostizPackageTests(unittest.TestCase):
         env = self.services['postiz']['environment']
         for key in ('MAIN_URL', 'FRONTEND_URL', 'BACKEND_URL', 'NEXT_PUBLIC_BACKEND_URL'):
             self.assertIn('${DEVICE_DOMAIN_NAME}:4677', env[key])
-        self.assertEqual(env['NEXT_PUBLIC_OVERRIDE_BACKEND_URL'], '/api')
+        # Postiz v2.26.0 parses this with new URL() during backend boot.
+        self.assertEqual(env['NEXT_PUBLIC_OVERRIDE_BACKEND_URL'], env['NEXT_PUBLIC_BACKEND_URL'])
         for name, prefix in {'postgres': 'postgres:17-', 'redis': 'redis:7.2-',
                              'temporal': 'temporalio/auto-setup:1.28.1',
                              'temporal-postgres': 'postgres:16-',
