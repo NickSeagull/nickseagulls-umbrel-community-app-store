@@ -8,7 +8,9 @@ services:
     environment:
       APP_HOST: nickseagull-postiz_postiz_1
       APP_PORT: 5000
-      PROXY_AUTH_ADD: "false"  # Postiz must handle login and OAuth callbacks itself.
+      # Keep Umbrel login in front of first-run signup and the dashboard.
+      # External OAuth callbacks will require a separately reviewed narrow
+      # proxy whitelist and a canonical HTTPS URL before accounts are linked.
 
   permissions:
     image: busybox:1.38.0@sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d

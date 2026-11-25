@@ -1,4 +1,4 @@
-"""Static install-safety checks; run with: uv run --with pyyaml python test_package.py."""
+"""Static install-safety checks; run: uv run --with pyyaml python tests/test_postiz_package.py."""
 from pathlib import Path
 import re
 import unittest
@@ -29,6 +29,8 @@ class PostizPackageTests(unittest.TestCase):
         self.assertEqual(proxy['environment']['APP_HOST'], 'nickseagull-postiz_postiz_1')
         self.assertEqual(proxy['environment']['APP_PORT'], 5000)
         self.assertEqual(self.manifest['port'], 4677)
+        self.assertNotIn('PROXY_AUTH_ADD', proxy['environment'])
+        self.assertNotIn('PROXY_AUTH_WHITELIST', proxy['environment'])
         self.assertEqual(proxy['depends_on']['postiz']['condition'], 'service_healthy')
         for name, svc in self.services.items():
             if name != 'app_proxy':

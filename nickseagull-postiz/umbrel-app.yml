@@ -10,7 +10,8 @@ description: >-
   Self-hosted social media scheduling with local media storage, PostgreSQL,
   Redis, and Temporal. Create an account in Postiz after installation;
   platform account integrations require separate setup and are not connected
-  by installing this package. Postiz handles its own login and OAuth callbacks.
+  by installing this package. Umbrel login guards first-run registration;
+  external social OAuth callbacks are not configured in this package.
 releaseNotes: >-
   Initial Nick-owned package, pinned to Postiz 2.26.0. This release fixes
   access control in billing routes and cross-organization post saves, and
