@@ -17,7 +17,7 @@ class PostizPackageTests(unittest.TestCase):
 
     def test_release_identity_and_pinned_image(self):
         self.assertEqual(self.manifest['id'], 'nickseagull-postiz')
-        self.assertEqual(self.manifest['version'], '2.26.0')
+        self.assertEqual(self.manifest['version'], '2.26.1')
         self.assertEqual(self.services['postiz']['image'],
                          'ghcr.io/gitroomhq/postiz-app:v2.26.0@sha256:875e61ac5d0ac43c3dec78a78a7032dfb03d9a8c6d4936ebb18adb606cc207c5')
         self.assertNotIn('v2.21.10', self.compose_text)
