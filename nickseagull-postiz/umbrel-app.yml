@@ -2,7 +2,7 @@ manifestVersion: 1
 id: nickseagull-postiz
 name: Postiz (RAMSYS)
 category: social
-version: "2.26.0"
+version: "2.26.1"
 tagline: Schedule posts across social channels
 storage:
   dataRoot: data
@@ -13,10 +13,9 @@ description: >-
   by installing this package. Umbrel login guards first-run registration;
   external social OAuth callbacks are not configured in this package.
 releaseNotes: >-
-  Initial Nick-owned package, pinned to Postiz 2.26.0. This release fixes
-  access control in billing routes and cross-organization post saves, and
-  includes prior security fixes through 2.25.3. A fresh install initializes
-  the Postgres schema automatically; token encryption remains off by default.
+  Umbrel packaging revision 2.26.1 fixes backend startup with an absolute API
+  URL. The upstream Postiz image remains pinned to v2.26.0; no social accounts
+  are connected by this update.
 developer: Postiz contributors
 website: https://postiz.com/
 repo: https://github.com/gitroomhq/postiz-app
