@@ -62,9 +62,8 @@ services:
       NEXT_PUBLIC_BACKEND_URL: "http://${DEVICE_DOMAIN_NAME}:4677/api"
       BACKEND_URL: "http://${DEVICE_DOMAIN_NAME}:4677/api"
 
-      # Use the address currently open in the browser for normal API requests.
-      # This makes login work through the LAN IP, umbrel.local, and custom local names.
-      NEXT_PUBLIC_OVERRIDE_BACKEND_URL: "/api"
+      # Postiz v2.26.0 parses this as an absolute URL during backend startup.
+      NEXT_PUBLIC_OVERRIDE_BACKEND_URL: "http://${DEVICE_DOMAIN_NAME}:4677/api"
       BACKEND_INTERNAL_URL: "http://localhost:3000"
 
       # Required because the normal Umbrel LAN connection uses HTTP.
